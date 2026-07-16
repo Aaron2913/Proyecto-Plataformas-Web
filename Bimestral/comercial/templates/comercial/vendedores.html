@@ -1,0 +1,39 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<h2>Vendedores</h2>
+
+<a href="{% url 'crear_vendedor' %}">Nuevo vendedor</a>
+
+<table border="1">
+    <tr>
+        <th>Usuario</th>
+        <th>Cédula</th>
+        <th>Dirección</th>
+        <th>Calificación</th>
+        <th>Total ventas</th>
+        <th>Nivel</th>
+        <th>Estado</th>
+        <th>Pedidos</th>
+    </tr>
+
+    {% for vendedor in vendedores %}
+    <tr>
+        <td>{{ vendedor.usuario.nombre }}</td>
+        <td>{{ vendedor.cedula }}</td>
+        <td>{{ vendedor.direccion }}</td>
+        <td>{{ vendedor.calificacion }}</td>
+        <td>{{ vendedor.total_ventas }}</td>
+        <td>{{ vendedor.nivel }}</td>
+        <td>{{ vendedor.estado_validacion }}</td>
+        <td>{{ vendedor.obtener_pedidos }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="8">No hay vendedores registrados.</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

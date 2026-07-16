@@ -1,0 +1,42 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<h2>Catálogo de productos</h2>
+
+<p>
+    Estos son los productos disponibles publicados por las empresas registradas en ISBEN.
+</p>
+
+<table>
+    <tr>
+        <th>Producto</th>
+        <th>Empresa</th>
+        <th>Descripción</th>
+        <th>Precio</th>
+        <th>Categoría</th>
+        <th>Stock disponible</th>
+    </tr>
+
+    {% for producto in productos %}
+    <tr>
+        <td>{{ producto.nombre }}</td>
+        <td>{{ producto.empresa.razon_social }}</td>
+        <td>{{ producto.descripcion }}</td>
+        <td>{{ producto.precio }}</td>
+        <td>{{ producto.categoria }}</td>
+        <td>{{ producto.obtener_stock_disponible }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="6">
+            <div class="empty-state">
+                <strong>No hay productos disponibles</strong>
+                <p>Cuando una empresa publique productos activos, aparecerán aquí.</p>
+            </div>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

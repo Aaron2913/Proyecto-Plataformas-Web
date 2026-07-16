@@ -1,0 +1,115 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<div class="hero-dashboard">
+    <div>
+        <h2>Panel del vendedor</h2>
+        <p>
+            Consulta productos disponibles, crea pedidos, registra pagos y revisa tu progreso dentro de ISBEN.
+        </p>
+    </div>
+
+    <div class="hero-etiqueta">
+        Nivel: {{ vendedor.nivel }}
+    </div>
+</div>
+
+<div class="info-perfil">
+    <div class="info-item">
+        <small>Vendedor</small>
+        <strong>{{ vendedor.usuario.nombre }}</strong>
+    </div>
+
+    <div class="info-item">
+        <small>Cédula</small>
+        <strong>{{ vendedor.cedula }}</strong>
+    </div>
+
+    <div class="info-item">
+        <small>Calificación</small>
+        <strong>{{ vendedor.calificacion }}</strong>
+    </div>
+
+    <div class="info-item">
+        <small>Estado</small>
+        {% if vendedor.estado_validacion == "APROBADO" %}
+            <span class="estado-aprobado">{{ vendedor.estado_validacion }}</span>
+        {% elif vendedor.estado_validacion == "PENDIENTE" %}
+            <span class="estado-pendiente">{{ vendedor.estado_validacion }}</span>
+        {% else %}
+            <span class="estado-rechazado">{{ vendedor.estado_validacion }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="dashboard-layout">
+
+    <div class="dashboard-card">
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"></div>
+                <p>Productos disponibles</p>
+                <div class="valor">{{ total_productos }}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon"></div>
+                <p>Mis pedidos</p>
+                <div class="valor">{{ total_pedidos }}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon"></div>
+                <p>Mis pagos</p>
+                <div class="valor">{{ total_pagos }}</div>
+            </div>
+        </div>
+
+        <div class="seccion">
+            <h3>Acciones rápidas</h3>
+
+            <div class="quick-actions">
+                <a href="{% url 'catalogo_vendedor' %}" class="quick-action">
+                    <strong>Ver catálogo</strong>
+                    <span>Consulta productos disponibles para realizar pedidos.</span>
+                </a>
+
+                <a href="{% url 'crear_pedido_vendedor' %}" class="quick-action">
+                    <strong>Crear pedido</strong>
+                    <span>Genera una nueva orden para una empresa.</span>
+                </a>
+
+                <a href="{% url 'crear_detalle_vendedor' %}" class="quick-action">
+                    <strong>Agregar producto</strong>
+                    <span>Añade productos a un pedido existente.</span>
+                </a>
+
+                <a href="{% url 'crear_pago_vendedor' %}" class="quick-action">
+                    <strong>Registrar pago</strong>
+                    <span>Registra el pago de tus pedidos generados.</span>
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="side-panel">
+        <h3>Resumen del perfil</h3>
+
+        <p><strong>Nivel actual:</strong> {{ vendedor.nivel }}</p>
+        <p><strong>Total de ventas:</strong> {{ vendedor.total_ventas }}</p>
+        <p><strong>Pedidos realizados:</strong> {{ total_pedidos }}</p>
+
+        <hr>
+
+        <h3>Recomendación</h3>
+        <p>
+            Antes de generar un pedido, revisa el catálogo y confirma el stock disponible.
+        </p>
+    </div>
+
+</div>
+
+{% endblock %}

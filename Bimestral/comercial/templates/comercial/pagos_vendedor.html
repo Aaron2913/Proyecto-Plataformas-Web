@@ -1,0 +1,35 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<h2>Mis pagos</h2>
+
+<a href="{% url 'crear_pago_vendedor' %}" class="boton">Registrar pago</a>
+
+<table>
+    <tr>
+        <th>Pedido</th>
+        <th>Empresa</th>
+        <th>Método de pago</th>
+        <th>Monto</th>
+        <th>Estado</th>
+        <th>Fecha</th>
+    </tr>
+
+    {% for pago in pagos %}
+    <tr>
+        <td>{{ pago.pedido.id }}</td>
+        <td>{{ pago.pedido.empresa.razon_social }}</td>
+        <td>{{ pago.metodo_pago }}</td>
+        <td>{{ pago.monto }}</td>
+        <td>{{ pago.estado_pago }}</td>
+        <td>{{ pago.fecha_pago }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="6">No tienes pagos registrados.</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

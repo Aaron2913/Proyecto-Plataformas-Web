@@ -1,0 +1,38 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro Empresa</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+
+<body class="login-body">
+
+<div class="registro-card">
+
+    <img src="{% static 'img/logos_2.png' %}" alt="Logo ISBEN" class="login-logo">
+
+    <h2>Registro de empresa</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <h3>Datos de acceso</h3>
+        {{ formulario_usuario.as_p }}
+
+        <h3>Datos de la empresa</h3>
+        {{ formulario_empresa.as_p }}
+
+        <button type="submit">Registrar empresa</button>
+    </form>
+
+    <p>
+        <a href="{% url 'login' %}">Volver al login</a>
+    </p>
+
+</div>
+
+</body>
+</html>

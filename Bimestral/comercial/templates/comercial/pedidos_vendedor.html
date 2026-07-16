@@ -1,0 +1,38 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<h2>Mis pedidos</h2>
+
+<a href="{% url 'crear_pedido_vendedor' %}" class="boton">Crear pedido</a>
+<a href="{% url 'crear_detalle_vendedor' %}" class="boton">Agregar producto al pedido</a>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Empresa</th>
+        <th>Fecha</th>
+        <th>Estado</th>
+        <th>Subtotal</th>
+        <th>Total</th>
+        <th>Detalles</th>
+    </tr>
+
+    {% for pedido in pedidos %}
+    <tr>
+        <td>{{ pedido.id }}</td>
+        <td>{{ pedido.empresa.razon_social }}</td>
+        <td>{{ pedido.fecha_pedido }}</td>
+        <td>{{ pedido.estado }}</td>
+        <td>{{ pedido.subtotal }}</td>
+        <td>{{ pedido.total }}</td>
+        <td>{{ pedido.obtener_detalles }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="7">No tienes pedidos registrados.</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

@@ -1,0 +1,68 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>ISBEN</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-brand">
+            <img src="{% static 'img/iso_1.png' %}" alt="Logo ISBEN" class="sidebar-logo">
+        </div>
+
+        <p class="sidebar-label">MENÚ PRINCIPAL</p>
+
+        {% if request.session.tipo_usuario == "EMPRESA" %}
+            <a href="{% url 'inicio_empresa' %}" class="menu-link">Inicio</a>
+            <a href="{% url 'productos_empresa' %}" class="menu-link">Productos</a>
+            <a href="{% url 'inventario_empresa' %}" class="menu-link">Inventario</a>
+            <a href="{% url 'pedidos_empresa' %}" class="menu-link">Pedidos recibidos</a>
+            <a href="{% url 'logout' %}" class="menu-link salir">Cerrar sesión</a>
+        {% endif %}
+
+        {% if request.session.tipo_usuario == "VENDEDOR" %}
+            <a href="{% url 'inicio_vendedor' %}" class="menu-link">Inicio</a>
+            <a href="{% url 'catalogo_vendedor' %}" class="menu-link">Catálogo</a>
+            <a href="{% url 'pedidos_vendedor' %}" class="menu-link">Mis pedidos</a>
+            <a href="{% url 'pagos_vendedor' %}" class="menu-link">Mis pagos</a>
+            <a href="{% url 'tutoriales_vendedor' %}" class="menu-link">Tutoriales</a>
+            <a href="{% url 'logout' %}" class="menu-link salir">Cerrar sesión</a>
+        {% endif %}
+
+    </aside>
+
+    <section class="contenido-principal">
+
+        <header class="header">
+            <div class="header-brand">
+                <h1>ISBEN</h1>
+                <p class="subtitulo-header">Plataforma intermediaria de comercialización</p>
+            </div>
+
+            {% if request.session.usuario_nombre %}
+                <div class="usuario-box">
+                    <span>Hola, {{ request.session.usuario_nombre }}</span>
+                    <small>{{ request.session.tipo_usuario }}</small>
+                </div>
+            {% endif %}
+        </header>
+
+        <main class="contenido">
+            {% block contenido %}
+            {% endblock %}
+        </main>
+
+    </section>
+
+</div>
+
+</body>
+</html>

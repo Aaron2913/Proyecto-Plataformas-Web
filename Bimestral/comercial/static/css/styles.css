@@ -1,0 +1,867 @@
+:root {
+    --naranja: #FB4318;
+    --amarillo: #FFC22F;
+    --amarillo-suave: #FFF3D0;
+    --naranja-suave: #FFF0EB;
+    --fondo: #F6F7FB;
+    --blanco: #FFFFFF;
+    --texto: #222222;
+    --gris: #E5E7EB;
+    --gris-oscuro: #555555;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Verdana, Arial, sans-serif;
+    background-color: var(--fondo);
+    color: var(--texto);
+}
+
+/* =======================
+   LOGIN Y REGISTRO
+======================= */
+
+.login-body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--amarillo-suave), var(--naranja-suave));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card {
+    width: 420px;
+    background-color: var(--blanco);
+    padding: 35px;
+    border-radius: 18px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    border-top: 8px solid var(--naranja);
+    border-bottom: 8px solid var(--amarillo);
+    text-align: center;
+}
+
+.login-logo {
+    width: 180px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.login-card h2 {
+    margin-top: 5px;
+    color: var(--naranja);
+}
+
+.login-card p {
+    text-align: left;
+}
+
+.login-card label {
+    font-weight: bold;
+}
+
+.login-card input,
+.login-card select,
+.login-card textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--gris);
+    border-radius: 8px;
+    margin-top: 5px;
+}
+
+.login-card input:focus,
+.login-card select:focus,
+.login-card textarea:focus {
+    outline: none;
+    border-color: var(--naranja);
+    box-shadow: 0 0 0 3px var(--amarillo-suave);
+}
+
+.login-card hr {
+    border: none;
+    border-top: 2px solid var(--amarillo);
+    margin: 25px 0;
+}
+
+.login-card a {
+    color: var(--naranja);
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.login-card a:hover {
+    color: var(--amarillo);
+}
+
+.registro-card {
+    width: 650px;
+    background-color: var(--blanco);
+    padding: 35px;
+    border-radius: 18px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    border-top: 8px solid var(--naranja);
+    border-bottom: 8px solid var(--amarillo);
+}
+
+.registro-card .login-logo {
+    display: block;
+    margin: 0 auto 20px auto;
+}
+
+.registro-card h2 {
+    color: var(--naranja);
+    text-align: center;
+}
+
+.registro-card h3 {
+    background-color: var(--amarillo-suave);
+    color: var(--naranja);
+    padding: 10px;
+    border-left: 5px solid var(--naranja);
+    border-radius: 6px;
+}
+
+.registro-card input,
+.registro-card select,
+.registro-card textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--gris);
+    border-radius: 8px;
+    margin-top: 5px;
+}
+
+.registro-card input:focus,
+.registro-card select:focus,
+.registro-card textarea:focus {
+    outline: none;
+    border-color: var(--naranja);
+    box-shadow: 0 0 0 3px var(--amarillo-suave);
+}
+
+.mensaje-error {
+    color: red;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* =======================
+   LAYOUT PRINCIPAL
+======================= */
+
+.layout {
+    min-height: 100vh;
+    display: flex;
+}
+
+.sidebar {
+    width: 250px;
+    background: linear-gradient(180deg, var(--naranja), #ff6a2d);
+    padding: 25px 18px;
+}
+
+.sidebar-logo {
+    width: 170px;
+    height: auto;
+    display: block;
+    margin: 0 auto 30px auto;
+    background-color: var(--blanco);
+    padding: 10px;
+    border-radius: 12px;
+}
+
+.sidebar a {
+    display: block;
+    padding: 13px 15px;
+    margin-bottom: 8px;
+    text-decoration: none;
+    color: var(--blanco);
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.sidebar a:hover {
+    background-color: var(--amarillo);
+    color: var(--texto);
+}
+
+.contenido-principal {
+    flex: 1;
+}
+
+.header {
+    background-color: var(--blanco);
+    padding: 18px 30px;
+    border-bottom: 5px solid var(--amarillo);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header h1 {
+    margin: 0;
+    color: var(--naranja);
+}
+
+.saludo {
+    font-weight: bold;
+    color: var(--texto);
+    background-color: var(--amarillo-suave);
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--amarillo);
+}
+
+.contenido {
+    padding: 30px;
+}
+
+.card {
+    background-color: var(--blanco);
+    padding: 28px;
+    border-radius: 16px;
+    border: 1px solid var(--gris);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+h2 {
+    color: var(--naranja);
+    border-bottom: 3px solid var(--amarillo);
+    padding-bottom: 8px;
+}
+
+h3 {
+    color: var(--naranja);
+}
+
+/* =======================
+   TARJETAS DASHBOARD
+======================= */
+
+.cards {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 25px 0;
+}
+
+.card-resumen {
+    background: linear-gradient(135deg, var(--amarillo), var(--amarillo-suave));
+    border-left: 7px solid var(--naranja);
+    padding: 22px;
+    border-radius: 14px;
+    width: 230px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+}
+
+.card-resumen p {
+    margin: 0 0 10px 0;
+}
+
+.numero {
+    font-size: 36px;
+    font-weight: bold;
+    color: var(--naranja);
+}
+
+/* =======================
+   BOTONES
+======================= */
+
+.boton,
+button {
+    display: inline-block;
+    background-color: var(--naranja);
+    color: var(--blanco);
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    text-decoration: none;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 5px 4px 5px 0;
+}
+
+.boton:hover,
+button:hover {
+    background-color: var(--amarillo);
+    color: var(--texto);
+}
+
+/* Botón secundario opcional */
+.boton-secundario {
+    background-color: var(--amarillo);
+    color: var(--texto);
+}
+
+.boton-secundario:hover {
+    background-color: var(--naranja);
+    color: var(--blanco);
+}
+
+/* =======================
+   TABLAS
+======================= */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--blanco);
+    margin-top: 20px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+th {
+    background-color: var(--naranja);
+    color: var(--blanco);
+    padding: 12px;
+    text-align: left;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid var(--gris);
+}
+
+tr:nth-child(even) {
+    background-color: var(--amarillo-suave);
+}
+
+tr:hover {
+    background-color: var(--naranja-suave);
+}
+
+/* =======================
+   FORMULARIOS GENERALES
+======================= */
+
+form p {
+    margin-bottom: 15px;
+}
+
+label {
+    font-weight: bold;
+}
+
+input,
+select,
+textarea {
+    padding: 10px;
+    border: 1px solid var(--gris);
+    border-radius: 8px;
+    margin-top: 5px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--naranja);
+    box-shadow: 0 0 0 3px var(--amarillo-suave);
+}
+
+textarea {
+    min-height: 90px;
+}
+
+/* =======================
+   ENLACES GENERALES
+======================= */
+
+a {
+    color: var(--naranja);
+}
+
+a:hover {
+    color: var(--amarillo);
+}
+/* =======================
+   MEJORA DASHBOARD ISBEN
+======================= */
+
+.dashboard-hero {
+    background: linear-gradient(135deg, var(--naranja), var(--amarillo));
+    color: white;
+    padding: 28px;
+    border-radius: 18px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dashboard-hero h2 {
+    color: white;
+    border-bottom: none;
+    margin: 0 0 8px 0;
+    padding: 0;
+}
+
+.dashboard-hero p {
+    margin: 0;
+    font-size: 15px;
+}
+
+.hero-badge {
+    background-color: white;
+    color: var(--naranja);
+    padding: 10px 16px;
+    border-radius: 30px;
+    font-weight: bold;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.resumen-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.resumen-card {
+    background-color: white;
+    border-radius: 16px;
+    padding: 22px;
+    border: 1px solid var(--gris);
+    border-top: 6px solid var(--amarillo);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.06);
+}
+
+.resumen-card strong {
+    display: block;
+    color: var(--gris-oscuro);
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.resumen-card .valor {
+    color: var(--naranja);
+    font-size: 38px;
+    font-weight: bold;
+}
+
+.panel-lateral {
+    background-color: var(--amarillo-suave);
+    border-radius: 16px;
+    padding: 22px;
+    border-left: 6px solid var(--naranja);
+}
+
+.panel-lateral h3 {
+    margin-top: 0;
+}
+
+.estado-badge {
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: 20px;
+    background-color: var(--amarillo);
+    color: var(--texto);
+    font-weight: bold;
+}
+
+.acciones-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-top: 20px;
+}
+
+.accion-card {
+    background-color: white;
+    border: 1px solid var(--gris);
+    border-radius: 14px;
+    padding: 18px;
+    text-decoration: none;
+    color: var(--texto);
+    transition: 0.2s;
+}
+
+.accion-card:hover {
+    background-color: var(--naranja);
+    color: white;
+    transform: translateY(-3px);
+}
+
+.accion-card span {
+    display: block;
+    font-size: 14px;
+    margin-top: 6px;
+    opacity: 0.85;
+}
+
+.seccion-titulo {
+    margin-top: 30px;
+    margin-bottom: 12px;
+}
+
+.lista-simple {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.lista-simple li {
+    background-color: white;
+    border: 1px solid var(--gris);
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+@media (max-width: 900px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .resumen-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .acciones-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+}
+/* =======================
+   DISEÑO NIVEL 10
+======================= */
+
+.sidebar-logo-box {
+    background-color: white;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 28px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.sidebar-label {
+    color: #ffe7b0;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+}
+
+.menu-link {
+    position: relative;
+    display: block;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    text-decoration: none;
+    color: white;
+    border-radius: 12px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.menu-link:hover {
+    background-color: var(--amarillo);
+    color: var(--texto);
+    transform: translateX(4px);
+}
+
+.menu-link.salir {
+    margin-top: 30px;
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.subtitulo-header {
+    margin: 4px 0 0 0;
+    color: var(--gris-oscuro);
+    font-size: 14px;
+}
+
+.usuario-box {
+    background-color: var(--amarillo-suave);
+    border: 1px solid var(--amarillo);
+    border-radius: 30px;
+    padding: 9px 16px;
+    text-align: right;
+}
+
+.usuario-box span {
+    display: block;
+    font-weight: bold;
+    color: var(--texto);
+}
+
+.usuario-box small {
+    color: var(--naranja);
+    font-weight: bold;
+}
+
+.dashboard-card {
+    background-color: white;
+    padding: 28px;
+    border-radius: 18px;
+    border: 1px solid var(--gris);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+}
+
+.hero-dashboard {
+    background: linear-gradient(135deg, var(--naranja), var(--amarillo));
+    color: white;
+    padding: 32px;
+    border-radius: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    box-shadow: 0 10px 24px rgba(251, 67, 24, 0.25);
+}
+
+.hero-dashboard h2 {
+    color: white;
+    border: none;
+    padding: 0;
+    margin: 0 0 8px 0;
+    font-size: 30px;
+}
+
+.hero-dashboard p {
+    margin: 0;
+    max-width: 620px;
+}
+
+.hero-etiqueta {
+    background-color: white;
+    color: var(--naranja);
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.info-perfil {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 25px;
+}
+
+.info-item {
+    background-color: white;
+    border: 1px solid var(--gris);
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.info-item small {
+    display: block;
+    color: var(--gris-oscuro);
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.info-item strong {
+    color: var(--naranja);
+}
+
+.dashboard-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 18px;
+    padding: 22px;
+    border: 1px solid var(--gris);
+    border-top: 6px solid var(--amarillo);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.stat-card p {
+    color: var(--gris-oscuro);
+    margin: 0;
+    font-weight: bold;
+}
+
+.stat-card .valor {
+    font-size: 38px;
+    font-weight: bold;
+    color: var(--naranja);
+    margin-top: 8px;
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.quick-action {
+    background-color: white;
+    border: 1px solid var(--gris);
+    border-radius: 16px;
+    padding: 18px;
+    text-decoration: none;
+    color: var(--texto);
+    transition: all 0.2s ease;
+}
+
+.quick-action:hover {
+    background-color: var(--naranja);
+    color: white;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(251, 67, 24, 0.25);
+}
+
+.quick-action strong {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.quick-action span {
+    font-size: 14px;
+}
+
+.side-panel {
+    background-color: white;
+    border-radius: 18px;
+    padding: 22px;
+    border: 1px solid var(--gris);
+    border-left: 7px solid var(--naranja);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+}
+
+.estado-aprobado {
+    background-color: #e8fff0;
+    color: #087b31;
+    border: 1px solid #9be7b5;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.estado-pendiente {
+    background-color: var(--amarillo-suave);
+    color: #8a5a00;
+    border: 1px solid var(--amarillo);
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.estado-rechazado {
+    background-color: #ffe8e8;
+    color: #a00000;
+    border: 1px solid #ffb4b4;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.empty-state {
+    background-color: var(--amarillo-suave);
+    border: 1px dashed var(--naranja);
+    padding: 25px;
+    border-radius: 14px;
+    text-align: center;
+    margin-top: 18px;
+}
+
+.empty-state strong {
+    display: block;
+    color: var(--naranja);
+    margin-bottom: 8px;
+}
+
+.seccion {
+    margin-top: 28px;
+}
+
+.seccion h3 {
+    margin-bottom: 12px;
+}
+
+@media (max-width: 1000px) {
+    .dashboard-layout,
+    .info-perfil {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid,
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-dashboard {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+}
+/* =======================
+   LOGO SIN FONDO BLANCO
+======================= */
+
+.sidebar-brand {
+    margin-bottom: 32px;
+    padding: 10px 0;
+    text-align: center;
+}
+
+.sidebar-logo {
+    width: 185px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* Anula estilos anteriores si existían */
+.sidebar-logo-box {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+}
+.sidebar-logo {
+    width: 95px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.login-logo {
+    width: 110px;
+    height: auto;
+    margin-bottom: 15px;
+}

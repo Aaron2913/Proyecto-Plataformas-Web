@@ -1,0 +1,35 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<h2>Productos</h2>
+
+<a href="{% url 'crear_producto' %}">Nuevo producto</a>
+
+<table border="1">
+    <tr>
+        <th>Nombre</th>
+        <th>Empresa</th>
+        <th>Precio</th>
+        <th>Categoría</th>
+        <th>Disponible</th>
+        <th>Stock disponible</th>
+    </tr>
+
+    {% for producto in productos %}
+    <tr>
+        <td>{{ producto.nombre }}</td>
+        <td>{{ producto.empresa.razon_social }}</td>
+        <td>{{ producto.precio }}</td>
+        <td>{{ producto.categoria }}</td>
+        <td>{{ producto.esta_disponible }}</td>
+        <td>{{ producto.obtener_stock_disponible }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="6">No hay productos registrados.</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

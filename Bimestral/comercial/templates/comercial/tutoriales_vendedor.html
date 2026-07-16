@@ -1,0 +1,31 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<h2>Tutoriales para vendedores</h2>
+
+<p>En esta sección se muestran guías para que el vendedor aprenda a usar la plataforma.</p>
+
+<table>
+    <tr>
+        <th>Título</th>
+        <th>Descripción</th>
+        <th>Contenido</th>
+    </tr>
+
+    {% for tutorial in tutoriales %}
+    <tr>
+        <td>{{ tutorial.titulo }}</td>
+        <td>{{ tutorial.descripcion }}</td>
+        <td>
+            <a href="{{ tutorial.url_contenido }}" target="_blank" class="boton">Ver tutorial</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="3">No hay tutoriales registrados.</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

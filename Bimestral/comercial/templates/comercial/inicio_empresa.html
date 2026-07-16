@@ -1,0 +1,115 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<div class="hero-dashboard">
+    <div>
+        <h2>Panel de empresa</h2>
+        <p>
+            Administra tus productos, controla el inventario y revisa los pedidos recibidos por vendedores.
+        </p>
+    </div>
+
+    <div class="hero-etiqueta">
+        {{ empresa.estado_validacion }}
+    </div>
+</div>
+
+<div class="info-perfil">
+    <div class="info-item">
+        <small>Empresa</small>
+        <strong>{{ empresa.razon_social }}</strong>
+    </div>
+
+    <div class="info-item">
+        <small>RUC</small>
+        <strong>{{ empresa.ruc }}</strong>
+    </div>
+
+    <div class="info-item">
+        <small>Sector</small>
+        <strong>{{ empresa.sector }}</strong>
+    </div>
+
+    <div class="info-item">
+        <small>Estado</small>
+        {% if empresa.estado_validacion == "APROBADA" %}
+            <span class="estado-aprobado">{{ empresa.estado_validacion }}</span>
+        {% elif empresa.estado_validacion == "PENDIENTE" %}
+            <span class="estado-pendiente">{{ empresa.estado_validacion }}</span>
+        {% else %}
+            <span class="estado-rechazado">{{ empresa.estado_validacion }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="dashboard-layout">
+
+    <div class="dashboard-card">
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <p>Productos registrados</p>
+                <div class="valor">{{ total_productos }}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <p>Inventarios registrados</p>
+                <div class="valor">{{ total_inventarios }}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🧾</div>
+                <p>Pedidos recibidos</p>
+                <div class="valor">{{ total_pedidos }}</div>
+            </div>
+        </div>
+
+        <div class="seccion">
+            <h3>Acciones rápidas</h3>
+
+            <div class="quick-actions">
+                <a href="{% url 'crear_producto_empresa' %}" class="quick-action">
+                    <strong>Registrar producto</strong>
+                    <span>Publica un nuevo producto para vendedores.</span>
+                </a>
+
+                <a href="{% url 'crear_inventario_empresa' %}" class="quick-action">
+                    <strong>Registrar inventario</strong>
+                    <span>Controla stock actual y reservado.</span>
+                </a>
+
+                <a href="{% url 'productos_empresa' %}" class="quick-action">
+                    <strong>Ver productos</strong>
+                    <span>Consulta los productos publicados.</span>
+                </a>
+
+                <a href="{% url 'pedidos_empresa' %}" class="quick-action">
+                    <strong>Pedidos recibidos</strong>
+                    <span>Revisa órdenes generadas por vendedores.</span>
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="side-panel">
+        <h3>Resumen empresarial</h3>
+
+        <p><strong>Límite de compra:</strong> {{ empresa.limite_compra }}</p>
+        <p><strong>Valor base sector:</strong> {{ empresa.valor_base_sector }}</p>
+        <p><strong>Pedidos recibidos:</strong> {{ total_pedidos }}</p>
+
+        <hr>
+
+        <h3>Recomendación</h3>
+        <p>
+            Mantén actualizado el inventario para evitar pedidos sin stock disponible.
+        </p>
+    </div>
+
+</div>
+
+{% endblock %}

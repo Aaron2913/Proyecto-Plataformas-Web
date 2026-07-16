@@ -1,0 +1,39 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<h2>Inicio</h2>
+
+<p>Bienvenido al sistema ISBEN, plataforma intermediaria para empresas distribuidoras y vendedores.</p>
+
+<ul>
+    <li>Usuarios: {{ total_usuarios }}</li>
+    <li>Empresas: {{ total_empresas }}</li>
+    <li>Vendedores: {{ total_vendedores }}</li>
+    <li>Productos: {{ total_productos }}</li>
+    <li>Inventarios: {{ total_inventarios }}</li>
+    <li>Pedidos: {{ total_pedidos }}</li>
+    <li>Pagos: {{ total_pagos }}</li>
+    <li>Facturas: {{ total_facturas }}</li>
+</ul>
+
+<h3>Acciones rápidas</h3>
+
+<ul>
+    <li><a href="{% url 'crear_usuario' %}">Registrar usuario</a></li>
+    <li><a href="{% url 'crear_empresa' %}">Registrar empresa</a></li>
+    <li><a href="{% url 'crear_vendedor' %}">Registrar vendedor</a></li>
+    <li><a href="{% url 'crear_producto' %}">Registrar producto</a></li>
+    <li><a href="{% url 'crear_inventario' %}">Registrar inventario</a></li>
+    <li><a href="{% url 'crear_pedido' %}">Registrar pedido</a></li>
+    <li><a href="{% url 'crear_detalle_pedido' %}">Agregar detalle de pedido</a></li>
+    <li><a href="{% url 'crear_pago' %}">Registrar pago</a></li>
+    <li><a href="{% url 'crear_factura' %}">Registrar factura</a></li>
+    <li><a href="{% url 'crear_comision' %}">Registrar comisión</a></li>
+    <li><a href="{% url 'crear_suscripcion' %}">Registrar suscripción</a></li>
+    <li><a href="{% url 'crear_calificacion' %}">Registrar calificación</a></li>
+    <li><a href="{% url 'crear_notificacion' %}">Registrar notificación</a></li>
+    <li><a href="{% url 'crear_tutorial' %}">Registrar tutorial</a></li>
+</ul>
+
+{% endblock %}

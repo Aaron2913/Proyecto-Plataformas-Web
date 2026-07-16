@@ -1,0 +1,35 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<h2>Inventario de la empresa</h2>
+
+<a href="{% url 'crear_inventario_empresa' %}" class="boton">Nuevo inventario</a>
+
+<table>
+    <tr>
+        <th>Producto</th>
+        <th>Stock actual</th>
+        <th>Stock reservado</th>
+        <th>Stock disponible</th>
+        <th>Estado</th>
+        <th>Última actualización</th>
+    </tr>
+
+    {% for inventario in inventarios %}
+    <tr>
+        <td>{{ inventario.producto.nombre }}</td>
+        <td>{{ inventario.stock_actual }}</td>
+        <td>{{ inventario.stock_reservado }}</td>
+        <td>{{ inventario.obtener_stock_disponible }}</td>
+        <td>{{ inventario.verificar_stock }}</td>
+        <td>{{ inventario.fecha_actualizacion }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="6">No hay inventario registrado.</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
