@@ -60,14 +60,13 @@ Bimestral/
 ## 1. Clonar el repositorio
 
 ```bash
-git clone URL_DEL_REPOSITORIO
-cd NOMBRE_DEL_REPOSITORIO
+git clone https://github.com/Aaron2913/Proyecto-Plataformas-Web.git
 ```
 
 Ejemplo:
 
 ```bash
-cd Proyecto-Plataformas-Web-main
+cd Proyecto-Plataformas-Web
 ```
 
 ---
@@ -81,6 +80,7 @@ cd Bimestral
 Verificar que en esta carpeta exista el archivo:
 
 ```text
+ls 
 manage.py
 ```
 
@@ -344,34 +344,3 @@ Si no se conoce la contraseña de un usuario administrador existente, crear uno 
 ```bash
 py manage.py createsuperuser
 ```
-
----
-
-## 13. Orden recomendado para revisión del proyecto
-
-1. Clonar el repositorio.
-2. Entrar a la carpeta `Bimestral`.
-3. Crear y activar entorno virtual.
-4. Instalar dependencias con `requirements.txt`.
-5. Ejecutar migraciones.
-6. Crear superusuario si se desea usar el panel admin.
-7. Crear token si se desea probar la API.
-8. Ejecutar `py manage.py runserver`.
-9. Abrir `http://127.0.0.1:8000/`.
-10. Ingresar con un usuario de prueba o registrar un nuevo usuario.
-
----
-
-## 14. Comandos resumidos
-
-```bash
-git clone URL_DEL_REPOSITORIO
-cd NOMBRE_DEL_REPOSITORIO/Bimestral
-py -m venv venv
-venv\Scripts\activate
-py -m pip install -r requirements.txt
-py manage.py makemigrations
-py manage.py migrate
-py manage.py createsuperuser
-py manage.py drf_create_token NOMBRE_DEL_USUARIO
-py manage.py runserver
