@@ -4,7 +4,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registro Delivery</title>
+    <title>Registro Tendero</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 
@@ -14,7 +14,7 @@
 
     <img src="{% static 'img/iso_1.png' %}" alt="Logo ISBEN" class="login-logo">
 
-    <h2>Registro de delivery</h2>
+    <h2>Registro de tendero</h2>
 
     <form method="post">
         {% csrf_token %}
@@ -22,10 +22,10 @@
         <h3>Datos de acceso</h3>
         {{ formulario_usuario.as_p }}
 
-        <h3>Datos del delivery</h3>
-        {{ formulario_vendedor.as_p }}
+        <h3>Datos de la tienda</h3>
+        {{ formulario_tienda.as_p }}
 
-        <button type="submit">Registrar delivery</button>
+        <button type="submit">Registrar tienda</button>
     </form>
 
     <p>

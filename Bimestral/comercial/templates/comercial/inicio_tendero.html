@@ -1,0 +1,107 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<div class="hero-dashboard">
+    <div>
+        <h2>Panel del tendero</h2>
+        <p>
+            Administra los productos disponibles en tu tienda y revisa los pedidos realizados por delivery.
+        </p>
+    </div>
+
+    <div class="hero-etiqueta">
+        {{ tienda.estado_validacion }}
+    </div>
+</div>
+
+<div class="info-perfil">
+    <div class="info-item">
+        <small>Tienda</small>
+        <strong>{{ tienda.nombre_tienda }}</strong>
+    </div>
+
+    <div class="info-item">
+        <small>RUC</small>
+        <strong>{{ tienda.ruc }}</strong>
+    </div>
+
+    <div class="info-item">
+        <small>Empresa proveedora</small>
+        <strong>{{ empresa_proveedora.razon_social }}</strong>
+    </div>
+
+    <div class="info-item">
+        <small>Estado</small>
+        {% if tienda.estado_validacion == "APROBADA" %}
+            <span class="estado-aprobado">{{ tienda.estado_validacion }}</span>
+        {% elif tienda.estado_validacion == "PENDIENTE" %}
+            <span class="estado-pendiente">{{ tienda.estado_validacion }}</span>
+        {% else %}
+            <span class="estado-rechazado">{{ tienda.estado_validacion }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="dashboard-layout">
+
+    <div class="dashboard-card">
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">PT</div>
+                <p>Productos tienda</p>
+                <div class="valor">{{ total_productos }}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">PE</div>
+                <p>Pedidos recibidos</p>
+                <div class="valor">{{ total_pedidos }}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">EP</div>
+                <p>Empresa proveedora</p>
+                <div class="valor">1</div>
+            </div>
+        </div>
+
+        <div class="seccion">
+            <h3>Acciones rápidas</h3>
+
+            <div class="quick-actions">
+                <a href="{% url 'crear_producto_tendero' %}" class="quick-action">
+                    <strong>Agregar producto</strong>
+                    <span>Selecciona productos de tu empresa proveedora.</span>
+                </a>
+
+                <a href="{% url 'productos_tendero' %}" class="quick-action">
+                    <strong>Ver productos</strong>
+                    <span>Consulta precios y stock de la tienda.</span>
+                </a>
+
+                <a href="{% url 'pedidos_tendero' %}" class="quick-action">
+                    <strong>Pedidos recibidos</strong>
+                    <span>Revisa las compras realizadas por delivery.</span>
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="side-panel">
+        <h3>Responsabilidad del tendero</h3>
+        <p>
+            El tendero mantiene el catálogo real de la tienda. El delivery ya no compra directamente a la empresa.
+        </p>
+
+        <hr>
+
+        <p><strong>Dirección:</strong> {{ tienda.direccion }}</p>
+        <p><strong>Sector:</strong> {{ tienda.sector }}</p>
+    </div>
+
+</div>
+
+{% endblock %}

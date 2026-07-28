@@ -12,7 +12,7 @@
 
 <div class="login-card">
 
-    <img src="{% static 'img/logos_2.png' %}" alt="Logo ISBEN" class="login-logo">
+    <img src="{% static 'img/iso_1.png' %}" alt="Logo ISBEN" class="login-logo">
 
     <h2>Iniciar sesión</h2>
 
@@ -22,9 +22,7 @@
 
     <form method="post">
         {% csrf_token %}
-
         {{ formulario.as_p }}
-
         <button type="submit">Ingresar</button>
     </form>
 
@@ -37,7 +35,11 @@
     </p>
 
     <p style="text-align: center;">
-        <a href="{% url 'registro_vendedor' %}">Registrar vendedor</a>
+        <a href="{% url 'registro_tendero' %}">Registrar tendero</a>
+    </p>
+
+    <p style="text-align: center;">
+        <a href="{% url 'registro_vendedor' %}">Registrar delivery</a>
     </p>
 
 </div>

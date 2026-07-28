@@ -4,9 +4,9 @@
 
 <div class="hero-dashboard">
     <div>
-        <h2>Panel de empresa</h2>
+        <h2>Panel de empresa proveedora</h2>
         <p>
-            Administra tus productos, controla el inventario y revisa los pedidos recibidos por vendedores.
+            Administra productos, controla inventario y revisa las tiendas que reciben tus productos.
         </p>
     </div>
 
@@ -49,21 +49,21 @@
 
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">📦</div>
-                <p>Productos registrados</p>
+                <div class="stat-icon">P</div>
+                <p>Productos</p>
                 <div class="valor">{{ total_productos }}</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon">📊</div>
-                <p>Inventarios registrados</p>
+                <div class="stat-icon">I</div>
+                <p>Inventarios</p>
                 <div class="valor">{{ total_inventarios }}</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon">🧾</div>
-                <p>Pedidos recibidos</p>
-                <div class="valor">{{ total_pedidos }}</div>
+                <div class="stat-icon">T</div>
+                <p>Tiendas</p>
+                <div class="valor">{{ total_tiendas }}</div>
             </div>
         </div>
 
@@ -73,22 +73,22 @@
             <div class="quick-actions">
                 <a href="{% url 'crear_producto_empresa' %}" class="quick-action">
                     <strong>Registrar producto</strong>
-                    <span>Publica un nuevo producto para vendedores.</span>
+                    <span>Publica productos que luego podrán usar las tiendas.</span>
                 </a>
 
                 <a href="{% url 'crear_inventario_empresa' %}" class="quick-action">
                     <strong>Registrar inventario</strong>
-                    <span>Controla stock actual y reservado.</span>
+                    <span>Controla el stock general de la empresa.</span>
                 </a>
 
-                <a href="{% url 'productos_empresa' %}" class="quick-action">
-                    <strong>Ver productos</strong>
-                    <span>Consulta los productos publicados.</span>
+                <a href="{% url 'tiendas_empresa' %}" class="quick-action">
+                    <strong>Ver tiendas</strong>
+                    <span>Consulta los tenderos asociados a la empresa.</span>
                 </a>
 
                 <a href="{% url 'pedidos_empresa' %}" class="quick-action">
                     <strong>Pedidos recibidos</strong>
-                    <span>Revisa órdenes generadas por vendedores.</span>
+                    <span>Revisa pedidos generados desde las tiendas.</span>
                 </a>
             </div>
         </div>
@@ -96,18 +96,15 @@
     </div>
 
     <div class="side-panel">
-        <h3>Resumen empresarial</h3>
+        <h3>Flujo del sistema</h3>
 
-        <p><strong>Límite de compra:</strong> {{ empresa.limite_compra }}</p>
-        <p><strong>Valor base sector:</strong> {{ empresa.valor_base_sector }}</p>
-        <p><strong>Pedidos recibidos:</strong> {{ total_pedidos }}</p>
+        <p><strong>1.</strong> La empresa registra productos.</p>
+        <p><strong>2.</strong> El tendero agrega esos productos a su tienda.</p>
+        <p><strong>3.</strong> El delivery compra productos desde una tienda.</p>
 
         <hr>
 
-        <h3>Recomendación</h3>
-        <p>
-            Mantén actualizado el inventario para evitar pedidos sin stock disponible.
-        </p>
+        <p><strong>Pedidos recibidos:</strong> {{ total_pedidos }}</p>
     </div>
 
 </div>

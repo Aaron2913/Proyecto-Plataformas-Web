@@ -1,0 +1,44 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<h2>Tiendas asociadas</h2>
+
+<p>Estas son las tiendas que trabajan con la empresa proveedora {{ empresa.razon_social }}.</p>
+
+<table>
+    <tr>
+        <th>Tienda</th>
+        <th>Dueño</th>
+        <th>RUC</th>
+        <th>Dirección</th>
+        <th>Sector</th>
+        <th>Estado</th>
+        <th>Productos tienda</th>
+        <th>Pedidos</th>
+    </tr>
+
+    {% for tienda in tiendas %}
+    <tr>
+        <td>{{ tienda.nombre_tienda }}</td>
+        <td>{{ tienda.usuario.nombre }}</td>
+        <td>{{ tienda.ruc }}</td>
+        <td>{{ tienda.direccion }}</td>
+        <td>{{ tienda.sector }}</td>
+        <td>{{ tienda.estado_validacion }}</td>
+        <td>{{ tienda.contar_productos_tienda }}</td>
+        <td>{{ tienda.contar_pedidos_recibidos }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="8">
+            <div class="empty-state">
+                <strong>No hay tiendas asociadas</strong>
+                <p>Cuando un tendero se registre y seleccione esta empresa, aparecerá aquí.</p>
+            </div>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

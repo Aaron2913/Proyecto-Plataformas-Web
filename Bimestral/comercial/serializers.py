@@ -3,8 +3,10 @@ from rest_framework import serializers
 from .models import Usuario
 from .models import Empresa
 from .models import Vendedor
+from .models import Tienda
 from .models import Producto
 from .models import Inventario
+from .models import ProductoTienda
 from .models import Pedido
 from .models import DetallePedido
 from .models import Pago
@@ -64,6 +66,22 @@ class VendedorSerializer(serializers.HyperlinkedModelSerializer):
         ]
 
 
+class TiendaSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Tienda
+        fields = [
+            'url',
+            'id',
+            'usuario',
+            'empresa',
+            'nombre_tienda',
+            'ruc',
+            'direccion',
+            'sector',
+            'estado_validacion',
+        ]
+
+
 class ProductoSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Producto
@@ -92,6 +110,22 @@ class InventarioSerializer(serializers.HyperlinkedModelSerializer):
         ]
 
 
+class ProductoTiendaSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = ProductoTienda
+        fields = [
+            'url',
+            'id',
+            'tienda',
+            'producto',
+            'precio_venta',
+            'stock_actual',
+            'stock_reservado',
+            'disponible',
+            'fecha_actualizacion',
+        ]
+
+
 class PedidoSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Pedido
@@ -100,6 +134,7 @@ class PedidoSerializer(serializers.HyperlinkedModelSerializer):
             'id',
             'vendedor',
             'empresa',
+            'tienda',
             'fecha_pedido',
             'estado',
             'subtotal',
@@ -115,6 +150,7 @@ class DetallePedidoSerializer(serializers.HyperlinkedModelSerializer):
             'id',
             'pedido',
             'producto',
+            'producto_tienda',
             'cantidad',
             'precio_unitario',
             'subtotal',

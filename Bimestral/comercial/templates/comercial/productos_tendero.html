@@ -2,39 +2,39 @@
 
 {% block contenido %}
 
-<h2>Catálogo de tiendas</h2>
+<h2>Productos de mi tienda</h2>
 
-<p>
-    Estos son los productos disponibles en las tiendas registradas. El delivery selecciona una tienda y compra desde su catálogo.
-</p>
+<a href="{% url 'crear_producto_tendero' %}" class="boton">Agregar producto</a>
 
 <table>
     <tr>
         <th>Producto</th>
-        <th>Tienda</th>
         <th>Empresa proveedora</th>
-        <th>Descripción</th>
         <th>Precio venta</th>
         <th>Categoría</th>
-        <th>Stock tienda</th>
+        <th>Stock actual</th>
+        <th>Stock reservado</th>
+        <th>Stock disponible</th>
+        <th>Estado</th>
     </tr>
 
     {% for item in productos_tienda %}
     <tr>
         <td>{{ item.producto.nombre }}</td>
-        <td>{{ item.tienda.nombre_tienda }}</td>
         <td>{{ item.producto.empresa.razon_social }}</td>
-        <td>{{ item.producto.descripcion }}</td>
         <td>{{ item.precio_venta }}</td>
         <td>{{ item.producto.categoria }}</td>
+        <td>{{ item.stock_actual }}</td>
+        <td>{{ item.stock_reservado }}</td>
         <td>{{ item.obtener_stock_disponible }}</td>
+        <td>{{ item.esta_disponible }}</td>
     </tr>
     {% empty %}
     <tr>
-        <td colspan="7">
+        <td colspan="8">
             <div class="empty-state">
-                <strong>No hay productos disponibles</strong>
-                <p>Cuando un tendero agregue productos a su tienda, aparecerán aquí.</p>
+                <strong>No hay productos en la tienda</strong>
+                <p>Agrega productos desde la empresa proveedora para que el delivery pueda comprarlos.</p>
             </div>
         </td>
     </tr>

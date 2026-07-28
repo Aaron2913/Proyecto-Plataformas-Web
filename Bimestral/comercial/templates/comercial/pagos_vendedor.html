@@ -9,7 +9,8 @@
 <table>
     <tr>
         <th>Pedido</th>
-        <th>Empresa</th>
+        <th>Tienda</th>
+        <th>Empresa proveedora</th>
         <th>Método de pago</th>
         <th>Monto</th>
         <th>Estado</th>
@@ -19,7 +20,8 @@
     {% for pago in pagos %}
     <tr>
         <td>{{ pago.pedido.id }}</td>
-        <td>{{ pago.pedido.empresa.razon_social }}</td>
+        <td>{{ pago.pedido.obtener_nombre_tienda }}</td>
+        <td>{{ pago.pedido.obtener_empresa_proveedora }}</td>
         <td>{{ pago.metodo_pago }}</td>
         <td>{{ pago.monto }}</td>
         <td>{{ pago.estado_pago }}</td>
@@ -27,7 +29,12 @@
     </tr>
     {% empty %}
     <tr>
-        <td colspan="6">No tienes pagos registrados.</td>
+        <td colspan="7">
+            <div class="empty-state">
+                <strong>No tienes pagos registrados</strong>
+                <p>Cuando registres un pago de un pedido, aparecerá en esta sección.</p>
+            </div>
+        </td>
     </tr>
     {% endfor %}
 </table>

@@ -4,9 +4,9 @@
 
 <div class="hero-dashboard">
     <div>
-        <h2>Panel del vendedor</h2>
+        <h2>Panel del delivery</h2>
         <p>
-            Consulta productos disponibles, crea pedidos, registra pagos y revisa tu progreso dentro de ISBEN.
+            Consulta productos por tienda, crea pedidos y registra pagos. El pedido ya se realiza a la tienda, no directamente a la empresa.
         </p>
     </div>
 
@@ -17,7 +17,7 @@
 
 <div class="info-perfil">
     <div class="info-item">
-        <small>Vendedor</small>
+        <small>Delivery</small>
         <strong>{{ vendedor.usuario.nombre }}</strong>
     </div>
 
@@ -49,19 +49,19 @@
 
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon"></div>
-                <p>Productos disponibles</p>
+                <div class="stat-icon">PT</div>
+                <p>Productos en tiendas</p>
                 <div class="valor">{{ total_productos }}</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon"></div>
+                <div class="stat-icon">PD</div>
                 <p>Mis pedidos</p>
                 <div class="valor">{{ total_pedidos }}</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon"></div>
+                <div class="stat-icon">PG</div>
                 <p>Mis pagos</p>
                 <div class="valor">{{ total_pagos }}</div>
             </div>
@@ -73,22 +73,22 @@
             <div class="quick-actions">
                 <a href="{% url 'catalogo_vendedor' %}" class="quick-action">
                     <strong>Ver catálogo</strong>
-                    <span>Consulta productos disponibles para realizar pedidos.</span>
+                    <span>Consulta productos disponibles por tienda.</span>
                 </a>
 
                 <a href="{% url 'crear_pedido_vendedor' %}" class="quick-action">
                     <strong>Crear pedido</strong>
-                    <span>Genera una nueva orden para una empresa.</span>
+                    <span>Selecciona una tienda para generar la orden.</span>
                 </a>
 
                 <a href="{% url 'crear_detalle_vendedor' %}" class="quick-action">
                     <strong>Agregar producto</strong>
-                    <span>Añade productos a un pedido existente.</span>
+                    <span>Añade productos de la tienda seleccionada.</span>
                 </a>
 
                 <a href="{% url 'crear_pago_vendedor' %}" class="quick-action">
                     <strong>Registrar pago</strong>
-                    <span>Registra el pago de tus pedidos generados.</span>
+                    <span>Registra el pago del pedido.</span>
                 </a>
             </div>
         </div>
@@ -96,7 +96,7 @@
     </div>
 
     <div class="side-panel">
-        <h3>Resumen del perfil</h3>
+        <h3>Resumen del delivery</h3>
 
         <p><strong>Nivel actual:</strong> {{ vendedor.nivel }}</p>
         <p><strong>Total de ventas:</strong> {{ vendedor.total_ventas }}</p>
@@ -104,9 +104,9 @@
 
         <hr>
 
-        <h3>Recomendación</h3>
+        <h3>Flujo correcto</h3>
         <p>
-            Antes de generar un pedido, revisa el catálogo y confirma el stock disponible.
+            El delivery revisa una tienda, crea un pedido y agrega productos del catálogo de esa tienda.
         </p>
     </div>
 

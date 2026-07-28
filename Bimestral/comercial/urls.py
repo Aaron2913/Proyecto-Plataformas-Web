@@ -8,8 +8,10 @@ from . import views
 from .views import UsuarioViewSet
 from .views import EmpresaViewSet
 from .views import VendedorViewSet
+from .views import TiendaViewSet
 from .views import ProductoViewSet
 from .views import InventarioViewSet
+from .views import ProductoTiendaViewSet
 from .views import PedidoViewSet
 from .views import DetallePedidoViewSet
 from .views import PagoViewSet
@@ -25,8 +27,10 @@ router = DefaultRouter()
 router.register(r'usuarios', UsuarioViewSet)
 router.register(r'empresas', EmpresaViewSet)
 router.register(r'vendedores', VendedorViewSet)
+router.register(r'tiendas', TiendaViewSet)
 router.register(r'productos', ProductoViewSet)
 router.register(r'inventarios', InventarioViewSet)
+router.register(r'productos-tienda', ProductoTiendaViewSet)
 router.register(r'pedidos', PedidoViewSet)
 router.register(r'detalles-pedido', DetallePedidoViewSet)
 router.register(r'pagos', PagoViewSet)
@@ -45,6 +49,7 @@ urlpatterns = [
     path('logout/', views.cerrar_sesion, name='logout'),
 
     path('registro/empresa/', views.registro_empresa, name='registro_empresa'),
+    path('registro/tendero/', views.registro_tendero, name='registro_tendero'),
     path('registro/vendedor/', views.registro_vendedor, name='registro_vendedor'),
 
     path('empresa/inicio/', views.inicio_empresa, name='inicio_empresa'),
@@ -52,7 +57,13 @@ urlpatterns = [
     path('empresa/productos/crear/', views.crear_producto_empresa, name='crear_producto_empresa'),
     path('empresa/inventario/', views.inventario_empresa, name='inventario_empresa'),
     path('empresa/inventario/crear/', views.crear_inventario_empresa, name='crear_inventario_empresa'),
+    path('empresa/tiendas/', views.tiendas_empresa, name='tiendas_empresa'),
     path('empresa/pedidos/', views.pedidos_empresa, name='pedidos_empresa'),
+
+    path('tendero/inicio/', views.inicio_tendero, name='inicio_tendero'),
+    path('tendero/productos/', views.productos_tendero, name='productos_tendero'),
+    path('tendero/productos/crear/', views.crear_producto_tendero, name='crear_producto_tendero'),
+    path('tendero/pedidos/', views.pedidos_tendero, name='pedidos_tendero'),
 
     path('vendedor/inicio/', views.inicio_vendedor, name='inicio_vendedor'),
     path('vendedor/catalogo/', views.catalogo_vendedor, name='catalogo_vendedor'),
