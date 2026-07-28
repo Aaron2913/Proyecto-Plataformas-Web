@@ -350,21 +350,26 @@ def crear_producto_tendero(request):
         return redirect("inicio")
 
     tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+    mensaje = ""
 
     if request.method == "POST":
         formulario = ProductoTiendaForm(request.POST)
         formulario = tienda.configurar_formulario_producto_tienda(formulario)
 
         if formulario.is_valid():
-            tienda.crear_producto_tienda(formulario)
-            return redirect("productos_tendero")
+            try:
+                tienda.crear_producto_tienda(formulario)
+                return redirect("productos_tendero")
+            except ValueError as error:
+                mensaje = str(error)
     else:
         formulario = ProductoTiendaForm()
         formulario = tienda.configurar_formulario_producto_tienda(formulario)
 
     informacion_template = {
         "formulario": formulario,
-        "titulo": "Agregar producto a la tienda"
+        "titulo": "Agregar producto a la tienda",
+        "mensaje": mensaje
     }
 
     return render(request, "comercial/formulario.html", informacion_template)
@@ -386,6 +391,51 @@ def pedidos_tendero(request):
     }
 
     return render(request, "comercial/pedidos_tendero.html", informacion_template)
+
+
+def confirmar_pedido_tendero(request, pedido_id):
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "TENDERO":
+        return redirect("inicio")
+
+    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+
+    if request.method == "POST":
+        tienda.confirmar_pedido(pedido_id)
+
+    return redirect("pedidos_tendero")
+
+
+def preparar_pedido_tendero(request, pedido_id):
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "TENDERO":
+        return redirect("inicio")
+
+    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+
+    if request.method == "POST":
+        tienda.pasar_pedido_a_preparacion(pedido_id)
+
+    return redirect("pedidos_tendero")
+
+
+def entregar_pedido_tendero(request, pedido_id):
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "TENDERO":
+        return redirect("inicio")
+
+    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+
+    if request.method == "POST":
+        tienda.entregar_pedido(pedido_id)
+
+    return redirect("pedidos_tendero")
 
 
 # ==========================
@@ -474,24 +524,44 @@ def crear_detalle_vendedor(request):
         return redirect("inicio")
 
     vendedor = Vendedor.obtener_por_usuario_id(request.session.get("usuario_id"))
+    mensaje = ""
 
     if request.method == "POST":
         formulario = DetallePedidoVendedorForm(request.POST)
         formulario = vendedor.configurar_formulario_detalle(formulario)
 
         if formulario.is_valid():
-            formulario.save()
-            return redirect("pedidos_vendedor")
+            try:
+                vendedor.agregar_detalle_pedido(formulario)
+                return redirect("pedidos_vendedor")
+            except ValueError as error:
+                mensaje = str(error)
     else:
         formulario = DetallePedidoVendedorForm()
         formulario = vendedor.configurar_formulario_detalle(formulario)
 
     informacion_template = {
         "formulario": formulario,
-        "titulo": "Agregar producto de tienda al pedido"
+        "titulo": "Agregar producto de tienda al pedido",
+        "mensaje": mensaje
     }
 
     return render(request, "comercial/formulario.html", informacion_template)
+
+
+def cancelar_pedido_vendedor(request, pedido_id):
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "VENDEDOR":
+        return redirect("inicio")
+
+    vendedor = Vendedor.obtener_por_usuario_id(request.session.get("usuario_id"))
+
+    if request.method == "POST":
+        vendedor.cancelar_pedido(pedido_id)
+
+    return redirect("pedidos_vendedor")
 
 
 def pagos_vendedor(request):
@@ -519,22 +589,26 @@ def crear_pago_vendedor(request):
         return redirect("inicio")
 
     vendedor = Vendedor.obtener_por_usuario_id(request.session.get("usuario_id"))
+    mensaje = ""
 
     if request.method == "POST":
         formulario = PagoVendedorForm(request.POST)
         formulario = vendedor.configurar_formulario_pago(formulario)
 
         if formulario.is_valid():
-            pago = formulario.save()
-            pago.validar_pago()
-            return redirect("pagos_vendedor")
+            try:
+                vendedor.registrar_pago(formulario)
+                return redirect("pagos_vendedor")
+            except ValueError as error:
+                mensaje = str(error)
     else:
         formulario = PagoVendedorForm()
         formulario = vendedor.configurar_formulario_pago(formulario)
 
     informacion_template = {
         "formulario": formulario,
-        "titulo": "Registrar pago"
+        "titulo": "Registrar pago",
+        "mensaje": mensaje
     }
 
     return render(request, "comercial/formulario.html", informacion_template)

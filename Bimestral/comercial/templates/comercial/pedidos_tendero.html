@@ -14,6 +14,7 @@
         <th>Subtotal</th>
         <th>Total</th>
         <th>Detalles</th>
+        <th>Acciones</th>
     </tr>
 
     {% for pedido in pedidos %}
@@ -26,10 +27,32 @@
         <td>{{ pedido.subtotal }}</td>
         <td>{{ pedido.total }}</td>
         <td>{{ pedido.obtener_detalles }}</td>
+        <td>
+            {% if pedido.estado == "PENDIENTE" %}
+                <form method="post" action="{% url 'confirmar_pedido_tendero' pedido.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">Confirmar</button>
+                </form>
+            {% endif %}
+
+            {% if pedido.estado == "PAGADO" %}
+                <form method="post" action="{% url 'preparar_pedido_tendero' pedido.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">Preparar</button>
+                </form>
+            {% endif %}
+
+            {% if pedido.estado == "EN_PREPARACION" %}
+                <form method="post" action="{% url 'entregar_pedido_tendero' pedido.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">Entregar</button>
+                </form>
+            {% endif %}
+        </td>
     </tr>
     {% empty %}
     <tr>
-        <td colspan="8">
+        <td colspan="9">
             <div class="empty-state">
                 <strong>No hay pedidos recibidos</strong>
                 <p>Cuando un delivery cree pedidos para esta tienda, aparecerán aquí.</p>

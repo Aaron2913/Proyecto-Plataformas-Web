@@ -122,7 +122,6 @@ class ProductoTiendaForm(forms.ModelForm):
             'producto',
             'precio_venta',
             'stock_actual',
-            'stock_reservado',
             'disponible',
         ]
 

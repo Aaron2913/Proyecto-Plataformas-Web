@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 
 
 class Usuario(models.Model):
@@ -272,13 +272,41 @@ class Vendedor(models.Model):
         return pedido
 
     def configurar_formulario_detalle(self, formulario):
-        formulario.fields["pedido"].queryset = self.listar_pedidos()
-        formulario.fields["producto_tienda"].queryset = ProductoTienda.objects.filter(disponible=True)
+        formulario.fields["pedido"].queryset = self.listar_pedidos().filter(estado__in=["PENDIENTE", "CONFIRMADO"])
+        formulario.fields["producto_tienda"].queryset = ProductoTienda.objects.filter(
+            disponible=True,
+            stock_actual__gt=models.F("stock_reservado")
+        )
         return formulario
 
     def configurar_formulario_pago(self, formulario):
-        formulario.fields["pedido"].queryset = self.listar_pedidos()
+        formulario.fields["pedido"].queryset = self.listar_pedidos().filter(estado__in=["PENDIENTE", "CONFIRMADO"])
         return formulario
+
+    def agregar_detalle_pedido(self, formulario):
+        detalle = formulario.save(commit=False)
+
+        if detalle.pedido.vendedor != self:
+            raise ValueError("El pedido seleccionado no pertenece al vendedor actual.")
+
+        return detalle.registrar_detalle_con_reserva()
+
+    def registrar_pago(self, formulario):
+        pago = formulario.save(commit=False)
+
+        if pago.pedido.vendedor != self:
+            raise ValueError("El pedido seleccionado no pertenece al vendedor actual.")
+
+        if pago.monto <= 0:
+            raise ValueError("El monto del pago debe ser mayor a cero.")
+
+        pago.save()
+        pago.validar_pago()
+        return pago
+
+    def cancelar_pedido(self, pedido_id):
+        pedido = self.pedidos.get(id=pedido_id)
+        return pedido.cancelar_pedido()
 
     def obtener_pedidos(self):
         return self.contar_pedidos()
@@ -387,10 +415,61 @@ class Tienda(models.Model):
         return formulario
 
     def crear_producto_tienda(self, formulario):
-        producto_tienda = formulario.save(commit=False)
-        producto_tienda.tienda = self
-        producto_tienda.save()
-        return producto_tienda
+        """
+        Registra o repone un producto dentro de la tienda y transfiere stock
+        desde el inventario de la empresa proveedora hacia el inventario de la tienda.
+
+        Esta es la regla principal del flujo:
+        Empresa proveedora -> Tienda -> Delivery.
+        """
+        with transaction.atomic():
+            producto_tienda_form = formulario.save(commit=False)
+            producto_tienda_form.tienda = self
+            cantidad_recibida = producto_tienda_form.stock_actual
+
+            if producto_tienda_form.producto.empresa != self.empresa:
+                raise ValueError("El producto no pertenece a la empresa proveedora de esta tienda.")
+
+            if cantidad_recibida <= 0:
+                raise ValueError("La cantidad de stock debe ser mayor a cero.")
+
+            if not hasattr(producto_tienda_form.producto, "inventario"):
+                raise ValueError("El producto no tiene inventario registrado en la empresa.")
+
+            inventario_empresa = producto_tienda_form.producto.inventario
+
+            if not inventario_empresa.puede_descontar_stock(cantidad_recibida):
+                raise ValueError("La empresa no tiene stock suficiente para entregar a la tienda.")
+
+            inventario_empresa.descontar_stock(cantidad_recibida)
+
+            producto_tienda_existente = ProductoTienda.objects.filter(
+                tienda=self,
+                producto=producto_tienda_form.producto
+            ).first()
+
+            if producto_tienda_existente is not None:
+                producto_tienda_existente.stock_actual = producto_tienda_existente.stock_actual + cantidad_recibida
+                producto_tienda_existente.precio_venta = producto_tienda_form.precio_venta
+                producto_tienda_existente.disponible = producto_tienda_form.disponible
+                producto_tienda_existente.save()
+                return producto_tienda_existente
+
+            producto_tienda_form.stock_reservado = 0
+            producto_tienda_form.save()
+            return producto_tienda_form
+
+    def confirmar_pedido(self, pedido_id):
+        pedido = self.pedidos_recibidos.get(id=pedido_id)
+        return pedido.confirmar_pedido()
+
+    def pasar_pedido_a_preparacion(self, pedido_id):
+        pedido = self.pedidos_recibidos.get(id=pedido_id)
+        return pedido.pasar_a_preparacion()
+
+    def entregar_pedido(self, pedido_id):
+        pedido = self.pedidos_recibidos.get(id=pedido_id)
+        return pedido.entregar_pedido()
 
     def esta_aprobada(self):
         if self.estado_validacion == "APROBADA":
@@ -466,8 +545,14 @@ class Inventario(models.Model):
         else:
             return "Sin stock"
 
+    def puede_reservar_stock(self, cantidad):
+        return cantidad > 0 and cantidad <= self.obtener_stock_disponible()
+
+    def puede_descontar_stock(self, cantidad):
+        return cantidad > 0 and cantidad <= self.obtener_stock_disponible()
+
     def reservar_stock(self, cantidad):
-        if cantidad <= self.obtener_stock_disponible():
+        if self.puede_reservar_stock(cantidad):
             self.stock_reservado = self.stock_reservado + cantidad
             self.save()
             return "Stock reservado"
@@ -475,7 +560,7 @@ class Inventario(models.Model):
             return "Stock insuficiente"
 
     def liberar_stock(self, cantidad):
-        if cantidad <= self.stock_reservado:
+        if cantidad > 0 and cantidad <= self.stock_reservado:
             self.stock_reservado = self.stock_reservado - cantidad
             self.save()
             return "Stock liberado"
@@ -483,7 +568,7 @@ class Inventario(models.Model):
             return "Cantidad incorrecta"
 
     def descontar_stock(self, cantidad):
-        if cantidad <= self.stock_actual:
+        if self.puede_descontar_stock(cantidad) or cantidad <= self.stock_actual:
             self.stock_actual = self.stock_actual - cantidad
 
             if cantidad <= self.stock_reservado:
@@ -527,8 +612,14 @@ class ProductoTienda(models.Model):
         else:
             return "No disponible"
 
+    def puede_reservar_stock(self, cantidad):
+        return cantidad > 0 and cantidad <= self.obtener_stock_disponible()
+
+    def puede_descontar_stock(self, cantidad):
+        return cantidad > 0 and cantidad <= self.stock_actual
+
     def reservar_stock(self, cantidad):
-        if cantidad <= self.obtener_stock_disponible():
+        if self.puede_reservar_stock(cantidad):
             self.stock_reservado = self.stock_reservado + cantidad
             self.save()
             return "Stock de tienda reservado"
@@ -536,7 +627,7 @@ class ProductoTienda(models.Model):
             return "Stock insuficiente en tienda"
 
     def liberar_stock(self, cantidad):
-        if cantidad <= self.stock_reservado:
+        if cantidad > 0 and cantidad <= self.stock_reservado:
             self.stock_reservado = self.stock_reservado - cantidad
             self.save()
             return "Stock de tienda liberado"
@@ -544,7 +635,7 @@ class ProductoTienda(models.Model):
             return "Cantidad incorrecta"
 
     def descontar_stock(self, cantidad):
-        if cantidad <= self.stock_actual:
+        if self.puede_descontar_stock(cantidad):
             self.stock_actual = self.stock_actual - cantidad
 
             if cantidad <= self.stock_reservado:
@@ -639,19 +730,42 @@ class Pedido(models.Model):
         detalles = self.detalles.all()
 
         for detalle in detalles:
-            detalle.reservar_stock()
+            resultado = detalle.reservar_stock()
+
+            if "insuficiente" in resultado.lower() or "no existe" in resultado.lower():
+                raise ValueError(resultado)
 
         return "Productos reservados"
 
     def confirmar_pedido(self):
-        detalles = self.detalles.all()
+        if self.estado != "PENDIENTE":
+            return "El pedido no está pendiente"
 
-        for detalle in detalles:
-            detalle.descontar_stock()
+        if self.detalles.count() == 0:
+            return "El pedido no tiene productos"
 
         self.estado = "CONFIRMADO"
         self.save()
         return "Pedido confirmado"
+
+    def pagar_y_descontar_stock(self):
+        if self.estado not in ["PENDIENTE", "CONFIRMADO"]:
+            raise ValueError("El pedido no se puede pagar en este estado")
+
+        if self.detalles.count() == 0:
+            raise ValueError("El pedido no tiene productos")
+
+        with transaction.atomic():
+            for detalle in self.detalles.all():
+                resultado = detalle.descontar_stock()
+
+                if "insuficiente" in resultado.lower() or "no existe" in resultado.lower():
+                    raise ValueError(resultado)
+
+            self.estado = "PAGADO"
+            self.save()
+
+        return "Pedido pagado y stock descontado"
 
     def pasar_a_preparacion(self):
         if self.estado == "PAGADO":
@@ -674,15 +788,17 @@ class Pedido(models.Model):
             return "El pedido debe estar en preparación"
 
     def cancelar_pedido(self):
-        if self.estado == "PENDIENTE":
-            detalles = self.detalles.all()
+        if self.estado in ["PENDIENTE", "CONFIRMADO"]:
+            with transaction.atomic():
+                detalles = self.detalles.all()
 
-            for detalle in detalles:
-                detalle.liberar_stock()
+                for detalle in detalles:
+                    detalle.liberar_stock()
 
-            self.estado = "CANCELADO"
-            self.save()
-            return "Pedido cancelado"
+                self.estado = "CANCELADO"
+                self.save()
+
+            return "Pedido cancelado y stock reservado liberado"
         else:
             return "El pedido no se puede cancelar"
 
@@ -743,6 +859,42 @@ class DetallePedido(models.Model):
         self.save()
         self.pedido.actualizar_total()
         return self.subtotal
+
+    def validar_detalle_tienda(self):
+        if self.producto_tienda is None:
+            raise ValueError("Debe seleccionar un producto de una tienda.")
+
+        if self.pedido.tienda != self.producto_tienda.tienda:
+            raise ValueError("El producto seleccionado no pertenece a la tienda del pedido.")
+
+        if self.cantidad <= 0:
+            raise ValueError("La cantidad debe ser mayor a cero.")
+
+        if not self.producto_tienda.puede_reservar_stock(self.cantidad):
+            raise ValueError("Stock insuficiente en la tienda.")
+
+        return True
+
+    def registrar_detalle_con_reserva(self):
+        with transaction.atomic():
+            self.validar_detalle_tienda()
+
+            if self.producto_tienda is not None:
+                self.producto = self.producto_tienda.producto
+
+                if self.precio_unitario == 0:
+                    self.precio_unitario = self.producto_tienda.precio_venta
+
+            self.subtotal = self.calcular_subtotal()
+            resultado = self.reservar_stock()
+
+            if "insuficiente" in resultado.lower() or "no existe" in resultado.lower():
+                raise ValueError(resultado)
+
+            self.save()
+            self.pedido.actualizar_total()
+
+            return self
 
     def reservar_stock(self):
         if self.producto_tienda is not None:
@@ -823,9 +975,7 @@ class Pago(models.Model):
 
     def validar_pago(self):
         if self.estado_pago == "APROBADO":
-            self.pedido.estado = "PAGADO"
-            self.pedido.save()
-            return "Pago validado y pedido actualizado"
+            return self.pedido.pagar_y_descontar_stock()
         else:
             return "El pago no está aprobado"
 
