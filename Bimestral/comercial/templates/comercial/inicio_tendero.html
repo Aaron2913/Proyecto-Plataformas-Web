@@ -27,8 +27,8 @@
     </div>
 
     <div class="info-item">
-        <small>Empresa proveedora</small>
-        <strong>{{ empresa_proveedora.razon_social }}</strong>
+        <small>Empresas disponibles</small>
+        <strong>{{ total_empresas }}</strong>
     </div>
 
     <div class="info-item">
@@ -61,9 +61,9 @@
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon">EP</div>
-                <p>Empresa proveedora</p>
-                <div class="valor">1</div>
+                <div class="stat-icon">EM</div>
+                <p>Empresas disponibles</p>
+                <div class="valor">{{ total_empresas }}</div>
             </div>
         </div>
 
@@ -73,7 +73,7 @@
             <div class="quick-actions">
                 <a href="{% url 'crear_producto_tendero' %}" class="quick-action">
                     <strong>Agregar producto</strong>
-                    <span>Selecciona productos de tu empresa proveedora.</span>
+                    <span>Selecciona productos disponibles de cualquier empresa proveedora.</span>
                 </a>
 
                 <a href="{% url 'productos_tendero' %}" class="quick-action">

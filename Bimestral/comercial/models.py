@@ -116,10 +116,14 @@ class Empresa(models.Model):
         return Inventario.objects.filter(producto__empresa=self)
 
     def listar_tiendas(self):
-        return self.tiendas.all()
+        return Tienda.objects.filter(
+            productos_tienda__producto__empresa=self
+        ).distinct()
 
     def listar_pedidos_recibidos(self):
-        return Pedido.objects.filter(empresa=self)
+        return Pedido.objects.filter(
+            detalles__producto_tienda__producto__empresa=self
+        ).distinct()
 
     def contar_productos(self):
         return self.listar_productos().count()
@@ -265,9 +269,6 @@ class Vendedor(models.Model):
         pedido.subtotal = 0
         pedido.total = 0
 
-        if pedido.tienda is not None:
-            pedido.empresa = pedido.tienda.empresa
-
         pedido.save()
         return pedido
 
@@ -353,11 +354,6 @@ class Tienda(models.Model):
         on_delete=models.CASCADE,
         related_name="tienda"
     )
-    empresa = models.ForeignKey(
-        Empresa,
-        on_delete=models.CASCADE,
-        related_name="tiendas"
-    )
     nombre_tienda = models.CharField(max_length=150)
     ruc = models.CharField(max_length=13, unique=True)
     direccion = models.CharField(max_length=200)
@@ -407,28 +403,38 @@ class Tienda(models.Model):
             "tienda": self,
             "total_productos": self.contar_productos_tienda(),
             "total_pedidos": self.contar_pedidos_recibidos(),
-            "empresa_proveedora": self.empresa,
+            "total_empresas": self.contar_empresas_disponibles(),
         }
 
+    def listar_empresas_disponibles(self):
+        return Empresa.objects.filter(
+            productos__inventario__stock_actual__gt=models.F("productos__inventario__stock_reservado"),
+            productos__disponible=True
+        ).distinct()
+
+    def contar_empresas_disponibles(self):
+        return self.listar_empresas_disponibles().count()
+
     def configurar_formulario_producto_tienda(self, formulario):
-        formulario.fields["producto"].queryset = Producto.objects.filter(empresa=self.empresa)
+        formulario.fields["producto"].queryset = Producto.objects.filter(
+            disponible=True,
+            inventario__stock_actual__gt=models.F("inventario__stock_reservado")
+        ).select_related("empresa", "inventario").distinct()
         return formulario
 
     def crear_producto_tienda(self, formulario):
         """
         Registra o repone un producto dentro de la tienda y transfiere stock
-        desde el inventario de la empresa proveedora hacia el inventario de la tienda.
+        desde el inventario de la empresa proveedora del producto hacia el inventario de la tienda.
 
         Esta es la regla principal del flujo:
         Empresa proveedora -> Tienda -> Delivery.
+        La tienda no queda amarrada a una sola empresa; puede surtirse de varias empresas.
         """
         with transaction.atomic():
             producto_tienda_form = formulario.save(commit=False)
             producto_tienda_form.tienda = self
             cantidad_recibida = producto_tienda_form.stock_actual
-
-            if producto_tienda_form.producto.empresa != self.empresa:
-                raise ValueError("El producto no pertenece a la empresa proveedora de esta tienda.")
 
             if cantidad_recibida <= 0:
                 raise ValueError("La cantidad de stock debe ser mayor a cero.")
@@ -668,13 +674,6 @@ class Pedido(models.Model):
         on_delete=models.CASCADE,
         related_name="pedidos"
     )
-    empresa = models.ForeignKey(
-        Empresa,
-        on_delete=models.CASCADE,
-        related_name="pedidos_recibidos",
-        null=True,
-        blank=True
-    )
     tienda = models.ForeignKey(
         Tienda,
         on_delete=models.CASCADE,
@@ -700,12 +699,22 @@ class Pedido(models.Model):
             return "Sin tienda"
 
     def obtener_empresa_proveedora(self):
-        if self.empresa is not None:
-            return self.empresa.razon_social
-        elif self.tienda is not None:
-            return self.tienda.empresa.razon_social
-        else:
-            return "Sin empresa"
+        empresas = self.detalles.filter(
+            producto_tienda__isnull=False
+        ).values_list(
+            "producto_tienda__producto__empresa__razon_social",
+            flat=True
+        ).distinct()
+
+        nombres = []
+        for nombre in empresas:
+            if nombre:
+                nombres.append(nombre)
+
+        if len(nombres) > 0:
+            return ", ".join(nombres)
+
+        return "Sin empresa proveedora"
 
     def obtener_total(self):
         total = 0
@@ -803,9 +812,6 @@ class Pedido(models.Model):
             return "El pedido no se puede cancelar"
 
     def save(self, *args, **kwargs):
-        if self.tienda is not None:
-            self.empresa = self.tienda.empresa
-
         super().save(*args, **kwargs)
 
 

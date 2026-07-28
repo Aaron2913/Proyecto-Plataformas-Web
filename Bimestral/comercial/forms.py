@@ -62,7 +62,6 @@ class RegistroTiendaForm(forms.ModelForm):
     class Meta:
         model = Tienda
         fields = [
-            'empresa',
             'nombre_tienda',
             'ruc',
             'direccion',
