@@ -1667,7 +1667,6 @@ class PedidoEmpresa(models.Model):
 
         return "Orden cancelada y stock de empresa restaurado"
 
-<<<<<<< HEAD
     @classmethod
     def obtener_contexto_detalle_por_usuario(cls, usuario_id, tipo_usuario, pedido_id):
         if tipo_usuario == "TENDERO":
@@ -1688,8 +1687,6 @@ class PedidoEmpresa(models.Model):
 
         return None
 
-=======
->>>>>>> 8f5e627ad741458334eb4c9b1ee198ad463e0a30
 
 class DetallePedidoEmpresa(models.Model):
     pedido = models.ForeignKey(
