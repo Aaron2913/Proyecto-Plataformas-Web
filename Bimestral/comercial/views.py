@@ -1,6 +1,9 @@
 from django.shortcuts import render
 from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
+from django.urls import reverse
+from django.db.models import F
 
 from rest_framework import viewsets
 
@@ -337,6 +340,55 @@ def entregar_pedido_empresa(request, pedido_id):
     return redirect("pedidos_empresa")
 
 
+
+def confirmar_pedido_empresa(request, pedido_id):
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "EMPRESA":
+        return redirect("inicio")
+
+    empresa = Empresa.obtener_por_usuario_id(request.session.get("usuario_id"))
+    pedido = get_object_or_404(PedidoEmpresa, id=pedido_id, empresa=empresa)
+
+    if request.method == "POST":
+        pedido.confirmar_pedido()
+
+    return redirect("pedidos_empresa")
+
+
+def preparar_pedido_empresa(request, pedido_id):
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "EMPRESA":
+        return redirect("inicio")
+
+    empresa = Empresa.obtener_por_usuario_id(request.session.get("usuario_id"))
+    pedido = get_object_or_404(PedidoEmpresa, id=pedido_id, empresa=empresa)
+
+    if request.method == "POST":
+        pedido.pasar_a_preparacion()
+
+    return redirect("pedidos_empresa")
+
+
+def entregar_pedido_empresa(request, pedido_id):
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "EMPRESA":
+        return redirect("inicio")
+
+    empresa = Empresa.obtener_por_usuario_id(request.session.get("usuario_id"))
+    pedido = get_object_or_404(PedidoEmpresa, id=pedido_id, empresa=empresa)
+
+    if request.method == "POST":
+        pedido.entregar_pedido()
+
+    return redirect("pedidos_empresa")
+
+
 # ==========================
 # VISTAS DE TENDERO
 # ==========================
@@ -363,7 +415,94 @@ def productos_tendero(request):
 
 
 def crear_producto_tendero(request):
+<<<<<<< HEAD
     redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
+=======
+    """Ruta antigua conservada: ahora el abastecimiento se realiza mediante órdenes."""
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "TENDERO":
+        return redirect("inicio")
+
+    return redirect("crear_pedido_empresa_tendero")
+
+
+def catalogo_empresas_tendero(request):
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "TENDERO":
+        return redirect("inicio")
+
+    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+    productos = Producto.objects.filter(
+        empresa__estado_validacion="APROBADA",
+        disponible=True,
+        inventario__stock_actual__gt=F("inventario__stock_reservado"),
+    ).select_related("empresa", "inventario").order_by(
+        "empresa__razon_social", "nombre"
+    )
+
+    return render(
+        request,
+        "comercial/catalogo_empresas_tendero.html",
+        {"tienda": tienda, "productos": productos},
+    )
+
+
+def pedidos_empresa_tendero(request):
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "TENDERO":
+        return redirect("inicio")
+
+    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+    pedidos = tienda.listar_pedidos_a_empresas()
+
+    return render(
+        request,
+        "comercial/pedidos_empresa_tendero.html",
+        {"tienda": tienda, "pedidos": pedidos},
+    )
+
+
+def crear_pedido_empresa_tendero(request):
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "TENDERO":
+        return redirect("inicio")
+
+    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+
+    if request.method == "POST":
+        formulario = PedidoEmpresaTenderoForm(request.POST)
+        formulario = tienda.configurar_formulario_pedido_empresa(formulario)
+
+        if formulario.is_valid():
+            tienda.crear_pedido_empresa(formulario)
+            return redirect("pedidos_empresa_tendero")
+    else:
+        formulario = PedidoEmpresaTenderoForm()
+        formulario = tienda.configurar_formulario_pedido_empresa(formulario)
+
+    return render(
+        request,
+        "comercial/formulario.html",
+        {
+            "formulario": formulario,
+            "titulo": "Crear pedido a una empresa",
+            "ayuda": "Selecciona primero la empresa proveedora. Después agrega sus productos a la orden.",
+        },
+    )
+
+
+def crear_detalle_empresa_tendero(request):
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+>>>>>>> 8f5e627ad741458334eb4c9b1ee198ad463e0a30
 
     if redireccion:
         return redirect(redireccion)
@@ -457,6 +596,7 @@ def crear_detalle_empresa_tendero(request):
 
 
 def pagos_empresa_tendero(request):
+<<<<<<< HEAD
     redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
 
     if redireccion:
@@ -473,6 +613,32 @@ def crear_pago_empresa_tendero(request):
         return redirect(redireccion)
 
     tienda = Tienda.obtener_actual_desde_request(request)
+=======
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "TENDERO":
+        return redirect("inicio")
+
+    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+    pagos = tienda.listar_pagos_a_empresas()
+
+    return render(
+        request,
+        "comercial/pagos_empresa_tendero.html",
+        {"tienda": tienda, "pagos": pagos},
+    )
+
+
+def crear_pago_empresa_tendero(request):
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "TENDERO":
+        return redirect("inicio")
+
+    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+>>>>>>> 8f5e627ad741458334eb4c9b1ee198ad463e0a30
     mensaje = ""
 
     if request.method == "POST":
@@ -502,6 +668,7 @@ def crear_pago_empresa_tendero(request):
 
 
 def cancelar_pedido_empresa_tendero(request, pedido_id):
+<<<<<<< HEAD
     redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
 
     if redireccion:
@@ -509,12 +676,24 @@ def cancelar_pedido_empresa_tendero(request, pedido_id):
 
     if request.method == "POST":
         tienda = Tienda.obtener_actual_desde_request(request)
+=======
+    if not request.session.get("usuario_id"):
+        return redirect("login")
+
+    if request.session.get("tipo_usuario") != "TENDERO":
+        return redirect("inicio")
+
+    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+
+    if request.method == "POST":
+>>>>>>> 8f5e627ad741458334eb4c9b1ee198ad463e0a30
         tienda.cancelar_pedido_empresa(pedido_id)
 
     return redirect("pedidos_empresa_tendero")
 
 
 def detalle_pedido_empresa_tendero(request, pedido_id):
+<<<<<<< HEAD
     redireccion = Usuario.obtener_redireccion_acceso(request)
 
     if redireccion:
@@ -530,6 +709,46 @@ def detalle_pedido_empresa_tendero(request, pedido_id):
         return redirect("inicio")
 
     return render(request, "comercial/detalle_pedido_empresa.html", contexto)
+=======
+    usuario_id = request.session.get("usuario_id")
+    tipo_usuario = request.session.get("tipo_usuario")
+
+    if not usuario_id:
+        return redirect("login")
+
+    pedido = get_object_or_404(
+        PedidoEmpresa.objects.select_related("tienda__usuario", "empresa__usuario"),
+        id=pedido_id,
+    )
+
+    if tipo_usuario == "TENDERO":
+        if pedido.tienda.usuario_id != usuario_id:
+            return redirect("inicio")
+        volver_url = reverse("pedidos_empresa_tendero")
+        titulo_origen = "Mis pedidos a empresas"
+    elif tipo_usuario == "EMPRESA":
+        if pedido.empresa.usuario_id != usuario_id:
+            return redirect("inicio")
+        volver_url = reverse("pedidos_empresa")
+        titulo_origen = "Pedidos recibidos"
+    else:
+        return redirect("inicio")
+
+    detalles = pedido.detalles.select_related("producto__empresa").all()
+    pago = PagoPedidoEmpresa.objects.filter(pedido=pedido).first()
+
+    return render(
+        request,
+        "comercial/detalle_pedido_empresa.html",
+        {
+            "pedido": pedido,
+            "detalles": detalles,
+            "pago": pago,
+            "volver_url": volver_url,
+            "titulo_origen": titulo_origen,
+        },
+    )
+>>>>>>> 8f5e627ad741458334eb4c9b1ee198ad463e0a30
 
 
 def pedidos_tendero(request):
@@ -634,6 +853,69 @@ def detalle_pedido(request, pedido_id):
     return render(request, "comercial/detalle_pedido.html", contexto)
 
 
+def detalle_pedido(request, pedido_id):
+    """Muestra los productos reales de una orden y valida el acceso por rol."""
+    usuario_id = request.session.get("usuario_id")
+    tipo_usuario = request.session.get("tipo_usuario")
+
+    if not usuario_id:
+        return redirect("login")
+
+    pedido = get_object_or_404(
+        Pedido.objects.select_related(
+            "vendedor__usuario",
+            "tienda__usuario",
+        ),
+        id=pedido_id,
+    )
+
+    detalles = pedido.detalles.select_related(
+        "producto",
+        "producto_tienda__producto__empresa",
+        "producto_tienda__tienda",
+    ).all()
+
+    if tipo_usuario == "VENDEDOR":
+        if pedido.vendedor.usuario_id != usuario_id:
+            return redirect("inicio")
+        volver_url = reverse("pedidos_vendedor")
+        titulo_origen = "Mis pedidos"
+
+    elif tipo_usuario == "TENDERO":
+        if pedido.tienda is None or pedido.tienda.usuario_id != usuario_id:
+            return redirect("inicio")
+        volver_url = reverse("pedidos_tendero")
+        titulo_origen = "Pedidos recibidos"
+
+    elif tipo_usuario == "EMPRESA":
+        empresa = Empresa.obtener_por_usuario_id(usuario_id)
+        detalles = detalles.filter(producto_tienda__producto__empresa=empresa)
+
+        if not detalles.exists():
+            return redirect("inicio")
+
+        volver_url = reverse("pedidos_empresa")
+        titulo_origen = "Pedidos recibidos"
+
+    else:
+        return redirect("inicio")
+
+    total_detalles = sum(detalle.subtotal for detalle in detalles)
+    pago = Pago.objects.filter(pedido=pedido).first()
+
+    informacion_template = {
+        "pedido": pedido,
+        "detalles": detalles,
+        "total_detalles": total_detalles,
+        "pago": pago,
+        "volver_url": volver_url,
+        "titulo_origen": titulo_origen,
+        "es_empresa": tipo_usuario == "EMPRESA",
+    }
+
+    return render(request, "comercial/detalle_pedido.html", informacion_template)
+
+
 def crear_pedido_vendedor(request):
     redireccion = Usuario.obtener_redireccion_acceso(request, "VENDEDOR")
 
@@ -685,6 +967,7 @@ def crear_detalle_vendedor(request):
         formulario = DetallePedidoVendedorForm()
         formulario = vendedor.configurar_formulario_detalle(formulario)
 
+<<<<<<< HEAD
     return render(
         request,
         "comercial/formulario.html",
@@ -695,6 +978,16 @@ def crear_detalle_vendedor(request):
             "ayuda": ayuda,
         },
     )
+=======
+    informacion_template = {
+        "formulario": formulario,
+        "titulo": "Agregar producto de tienda al pedido",
+        "mensaje": mensaje,
+        "ayuda": ayuda,
+    }
+
+    return render(request, "comercial/formulario.html", informacion_template)
+>>>>>>> 8f5e627ad741458334eb4c9b1ee198ad463e0a30
 
 
 def cancelar_pedido_vendedor(request, pedido_id):
@@ -743,6 +1036,7 @@ def crear_pago_vendedor(request):
         formulario = PagoVendedorForm()
         formulario = vendedor.configurar_formulario_pago(formulario)
 
+<<<<<<< HEAD
     return render(
         request,
         "comercial/formulario.html",
@@ -753,6 +1047,16 @@ def crear_pago_vendedor(request):
             "ayuda": "El monto debe coincidir con el total. Al guardar, la orden quedará pagada y cerrada para nuevos productos.",
         },
     )
+=======
+    informacion_template = {
+        "formulario": formulario,
+        "titulo": "Pagar pedido",
+        "mensaje": mensaje,
+        "ayuda": "El monto debe coincidir con el total. Al guardar, la orden quedará pagada y cerrada para nuevos productos.",
+    }
+
+    return render(request, "comercial/formulario.html", informacion_template)
+>>>>>>> 8f5e627ad741458334eb4c9b1ee198ad463e0a30
 
 
 def tutoriales_vendedor(request):
@@ -769,6 +1073,31 @@ def tutoriales_vendedor(request):
 # RESUMEN JSON
 # ==========================
 
+<<<<<<< HEAD
+=======
+def resumen(request):
+    datos = {
+        "usuarios": Usuario.objects.count(),
+        "empresas": Empresa.objects.count(),
+        "tenderos": Tienda.objects.count(),
+        "vendedores": Vendedor.objects.count(),
+        "productos_empresa": Producto.objects.count(),
+        "inventarios_empresa": Inventario.objects.count(),
+        "productos_tienda": ProductoTienda.objects.count(),
+        "pedidos": Pedido.objects.count(),
+        "detalles_pedido": DetallePedido.objects.count(),
+        "pagos": Pago.objects.count(),
+        "pedidos_empresa": PedidoEmpresa.objects.count(),
+        "detalles_pedido_empresa": DetallePedidoEmpresa.objects.count(),
+        "pagos_pedido_empresa": PagoPedidoEmpresa.objects.count(),
+        "facturas": Factura.objects.count(),
+        "comisiones": Comision.objects.count(),
+        "suscripciones": Suscripcion.objects.count(),
+        "calificaciones": Calificacion.objects.count(),
+        "notificaciones": Notificacion.objects.count(),
+        "tutoriales": Tutorial.objects.count(),
+    }
+>>>>>>> 8f5e627ad741458334eb4c9b1ee198ad463e0a30
 
 def resumen(request):
     return JsonResponse(Usuario.obtener_resumen_sistema())
