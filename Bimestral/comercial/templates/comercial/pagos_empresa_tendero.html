@@ -1,0 +1,40 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<h2>Pagos realizados a empresas</h2>
+
+<a href="{% url 'crear_pago_empresa_tendero' %}" class="boton">Registrar pago</a>
+
+<table>
+    <tr>
+        <th>Orden</th>
+        <th>Empresa</th>
+        <th>Método</th>
+        <th>Monto</th>
+        <th>Estado</th>
+        <th>Fecha</th>
+    </tr>
+
+    {% for pago in pagos %}
+    <tr>
+        <td>#{{ pago.pedido.id }}</td>
+        <td>{{ pago.pedido.empresa.razon_social }}</td>
+        <td>{{ pago.get_metodo_pago_display }}</td>
+        <td>${{ pago.monto|floatformat:2 }}</td>
+        <td>{{ pago.get_estado_pago_display }}</td>
+        <td>{{ pago.fecha_pago|date:"d/m/Y H:i" }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="6">
+            <div class="empty-state">
+                <strong>No hay pagos registrados</strong>
+                <p>Los pagos de compras a empresas aparecerán en esta sección.</p>
+            </div>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

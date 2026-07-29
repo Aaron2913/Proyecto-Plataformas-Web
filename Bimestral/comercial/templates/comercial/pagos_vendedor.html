@@ -23,8 +23,8 @@
         <td>{{ pago.pedido.obtener_nombre_tienda }}</td>
         <td>{{ pago.pedido.obtener_empresa_proveedora }}</td>
         <td>{{ pago.metodo_pago }}</td>
-        <td>{{ pago.monto }}</td>
-        <td>{{ pago.estado_pago }}</td>
+        <td>${{ pago.monto|floatformat:2 }}</td>
+        <td>{{ pago.get_estado_pago_display }}</td>
         <td>{{ pago.fecha_pago }}</td>
     </tr>
     {% empty %}

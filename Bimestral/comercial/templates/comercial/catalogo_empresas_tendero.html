@@ -1,0 +1,41 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<h2>Catálogo de empresas proveedoras</h2>
+
+<a href="{% url 'crear_pedido_empresa_tendero' %}" class="boton">Crear pedido a empresa</a>
+<a href="{% url 'crear_detalle_empresa_tendero' %}" class="boton boton-secundario">Agregar producto a pedido</a>
+
+<table>
+    <tr>
+        <th>Empresa</th>
+        <th>Producto</th>
+        <th>Categoría</th>
+        <th>Precio</th>
+        <th>Stock disponible</th>
+        <th>Descripción</th>
+    </tr>
+
+    {% for producto in productos %}
+    <tr>
+        <td>{{ producto.empresa.razon_social }}</td>
+        <td>{{ producto.nombre }}</td>
+        <td>{{ producto.categoria }}</td>
+        <td>${{ producto.precio|floatformat:2 }}</td>
+        <td>{{ producto.obtener_stock_disponible }}</td>
+        <td>{{ producto.descripcion }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="6">
+            <div class="empty-state">
+                <strong>No hay productos disponibles</strong>
+                <p>Las empresas deben registrar inventario y tener su cuenta aprobada.</p>
+            </div>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

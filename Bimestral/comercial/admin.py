@@ -10,6 +10,9 @@ from .models import ProductoTienda
 from .models import Pedido
 from .models import DetallePedido
 from .models import Pago
+from .models import PedidoEmpresa
+from .models import DetallePedidoEmpresa
+from .models import PagoPedidoEmpresa
 from .models import Factura
 from .models import Comision
 from .models import Suscripcion
@@ -28,6 +31,9 @@ admin.site.register(ProductoTienda)
 admin.site.register(Pedido)
 admin.site.register(DetallePedido)
 admin.site.register(Pago)
+admin.site.register(PedidoEmpresa)
+admin.site.register(DetallePedidoEmpresa)
+admin.site.register(PagoPedidoEmpresa)
 admin.site.register(Factura)
 admin.site.register(Comision)
 admin.site.register(Suscripcion)

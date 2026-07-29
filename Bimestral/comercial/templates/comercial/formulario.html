@@ -11,6 +11,13 @@
     </div>
 {% endif %}
 
+{% if ayuda %}
+    <div class="aviso-informativo">
+        <strong>Importante</strong>
+        <p>{{ ayuda }}</p>
+    </div>
+{% endif %}
+
 <form method="post">
     {% csrf_token %}
 

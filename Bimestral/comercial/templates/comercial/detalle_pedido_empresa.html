@@ -1,0 +1,89 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<div class="encabezado-detalle">
+    <div>
+        <h2>Detalle del pedido a empresa #{{ pedido.id }}</h2>
+        <p>Productos solicitados por la tienda a la empresa proveedora.</p>
+    </div>
+    <a href="{{ volver_url }}" class="boton boton-secundario">Volver a {{ titulo_origen }}</a>
+</div>
+
+<div class="resumen-pedido-detalle">
+    <div>
+        <strong>Empresa</strong>
+        <span>{{ pedido.empresa.razon_social }}</span>
+    </div>
+    <div>
+        <strong>Tienda</strong>
+        <span>{{ pedido.tienda.nombre_tienda }}</span>
+    </div>
+    <div>
+        <strong>Fecha</strong>
+        <span>{{ pedido.fecha_pedido|date:"d/m/Y H:i" }}</span>
+    </div>
+    <div>
+        <strong>Estado</strong>
+        <span class="estado-pedido estado-{{ pedido.estado|lower }}">{{ pedido.get_estado_display }}</span>
+    </div>
+    <div>
+        <strong>Pago</strong>
+        {% if pago %}
+            <span>{{ pago.get_estado_pago_display }} - {{ pago.get_metodo_pago_display }}</span>
+        {% else %}
+            <span>Sin pago registrado</span>
+        {% endif %}
+    </div>
+</div>
+
+<table>
+    <tr>
+        <th>Producto</th>
+        <th>Categoría</th>
+        <th>Cantidad</th>
+        <th>Precio unitario</th>
+        <th>Subtotal</th>
+    </tr>
+
+    {% for detalle in detalles %}
+    <tr>
+        <td>{{ detalle.producto.nombre }}</td>
+        <td>{{ detalle.producto.categoria }}</td>
+        <td>{{ detalle.cantidad }}</td>
+        <td>${{ detalle.precio_unitario|floatformat:2 }}</td>
+        <td>${{ detalle.subtotal|floatformat:2 }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="5">
+            <div class="empty-state">
+                <strong>Esta orden todavía no tiene productos</strong>
+            </div>
+        </td>
+    </tr>
+    {% endfor %}
+
+    {% if detalles %}
+    <tr class="fila-total">
+        <td colspan="4">Total de la orden</td>
+        <td>${{ pedido.total|floatformat:2 }}</td>
+    </tr>
+    {% endif %}
+</table>
+
+{% if pedido.estado == "PAGADO" %}
+<div class="aviso-cierre">
+    <strong>Orden pagada:</strong> ya no admite nuevos productos. Si el tendero cancela antes de la entrega, el stock y el pago se restauran como reembolso.
+</div>
+{% elif pedido.estado == "ENTREGADO" %}
+<div class="aviso-cierre">
+    <strong>Orden entregada:</strong> las cantidades ya fueron agregadas al inventario de la tienda.
+</div>
+{% elif pedido.estado == "CANCELADO" %}
+<div class="aviso-cierre">
+    <strong>Orden cancelada:</strong> el stock de la empresa fue restaurado y la orden quedó cerrada.
+</div>
+{% endif %}
+
+{% endblock %}

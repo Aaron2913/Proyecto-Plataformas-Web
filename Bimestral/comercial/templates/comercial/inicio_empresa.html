@@ -6,7 +6,7 @@
     <div>
         <h2>Panel de empresa proveedora</h2>
         <p>
-            Administra productos, controla inventario y revisa las tiendas que reciben tus productos.
+            Administra tus productos, controla el inventario y atiende los pedidos de abastecimiento realizados por las tiendas.
         </p>
     </div>
 
@@ -65,6 +65,12 @@
                 <p>Tiendas</p>
                 <div class="valor">{{ total_tiendas }}</div>
             </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">PE</div>
+                <p>Pedidos de tiendas</p>
+                <div class="valor">{{ total_pedidos }}</div>
+            </div>
         </div>
 
         <div class="seccion">
@@ -73,22 +79,22 @@
             <div class="quick-actions">
                 <a href="{% url 'crear_producto_empresa' %}" class="quick-action">
                     <strong>Registrar producto</strong>
-                    <span>Publica productos que luego podrán usar las tiendas.</span>
+                    <span>Publica productos para que las tiendas puedan solicitarlos.</span>
                 </a>
 
                 <a href="{% url 'crear_inventario_empresa' %}" class="quick-action">
                     <strong>Registrar inventario</strong>
-                    <span>Controla el stock general de la empresa.</span>
+                    <span>Controla el stock disponible y reservado de la empresa.</span>
                 </a>
 
                 <a href="{% url 'tiendas_empresa' %}" class="quick-action">
                     <strong>Ver tiendas</strong>
-                    <span>Consulta los tenderos asociados a la empresa.</span>
+                    <span>Consulta las tiendas que compran productos de la empresa.</span>
                 </a>
 
                 <a href="{% url 'pedidos_empresa' %}" class="quick-action">
-                    <strong>Pedidos recibidos</strong>
-                    <span>Revisa pedidos generados desde las tiendas.</span>
+                    <strong>Pedidos de tiendas</strong>
+                    <span>Confirma, prepara y entrega las órdenes de abastecimiento.</span>
                 </a>
             </div>
         </div>
@@ -96,15 +102,31 @@
     </div>
 
     <div class="side-panel">
-        <h3>Flujo del sistema</h3>
+        <h3>Información de la empresa</h3>
 
-        <p><strong>1.</strong> La empresa registra productos.</p>
-        <p><strong>2.</strong> El tendero agrega esos productos a su tienda.</p>
-        <p><strong>3.</strong> El delivery compra productos desde una tienda.</p>
+        <p><strong>Razón social:</strong> {{ empresa.razon_social }}</p>
+        <p><strong>Dirección:</strong> {{ empresa.direccion }}</p>
+        <p><strong>Sector:</strong> {{ empresa.sector }}</p>
+        <p><strong>Teléfono:</strong> {{ empresa.usuario.telefono }}</p>
+        <p>
+            <strong>Fundación:</strong>
+            {% if empresa.fecha_fundacion %}
+                {{ empresa.fecha_fundacion|date:"d/m/Y" }}
+            {% else %}
+                No registrada
+            {% endif %}
+        </p>
 
         <hr>
 
-        <p><strong>Pedidos recibidos:</strong> {{ total_pedidos }}</p>
+        <h3>Historia</h3>
+        <p>
+            {% if empresa.historia %}
+                {{ empresa.historia }}
+            {% else %}
+                {{ empresa.razon_social }} es una empresa proveedora registrada en ISBEN, dedicada a comercializar productos para tiendas del sector {{ empresa.sector }}.
+            {% endif %}
+        </p>
     </div>
 
 </div>

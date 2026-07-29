@@ -31,8 +31,11 @@
 
         {% if request.session.tipo_usuario == "TENDERO" %}
             <a href="{% url 'inicio_tendero' %}" class="menu-link">Inicio</a>
-            <a href="{% url 'productos_tendero' %}" class="menu-link">Productos tienda</a>
-            <a href="{% url 'pedidos_tendero' %}" class="menu-link">Pedidos recibidos</a>
+            <a href="{% url 'catalogo_empresas_tendero' %}" class="menu-link">Catálogo empresas</a>
+            <a href="{% url 'pedidos_empresa_tendero' %}" class="menu-link">Mis compras</a>
+            <a href="{% url 'pagos_empresa_tendero' %}" class="menu-link">Pagos a empresas</a>
+            <a href="{% url 'productos_tendero' %}" class="menu-link">Inventario tienda</a>
+            <a href="{% url 'pedidos_tendero' %}" class="menu-link">Pedidos de delivery</a>
             <a href="{% url 'logout' %}" class="menu-link salir">Cerrar sesión</a>
         {% endif %}
 
@@ -52,7 +55,7 @@
         <header class="header">
             <div class="header-brand">
                 <h1>ISBEN</h1>
-                <p class="subtitulo-header">Empresa → Tienda → Delivery</p>
+                <p class="subtitulo-header">Gestión comercial multiempresa</p>
             </div>
 
             {% if request.session.usuario_nombre %}

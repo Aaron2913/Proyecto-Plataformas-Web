@@ -6,7 +6,7 @@
     <div>
         <h2>Panel del delivery</h2>
         <p>
-            Consulta productos por tienda, crea pedidos y registra pagos. El pedido ya se realiza a la tienda, no directamente a la empresa.
+            Consulta productos por tienda, crea pedidos independientes y registra el pago de cada orden.
         </p>
     </div>
 
@@ -78,17 +78,17 @@
 
                 <a href="{% url 'crear_pedido_vendedor' %}" class="quick-action">
                     <strong>Crear pedido</strong>
-                    <span>Selecciona una tienda para generar la orden.</span>
+                    <span>Selecciona una tienda y genera una orden nueva.</span>
                 </a>
 
                 <a href="{% url 'crear_detalle_vendedor' %}" class="quick-action">
                     <strong>Agregar producto</strong>
-                    <span>Añade productos de la tienda seleccionada.</span>
+                    <span>Añade productos solamente a pedidos abiertos.</span>
                 </a>
 
                 <a href="{% url 'crear_pago_vendedor' %}" class="quick-action">
                     <strong>Registrar pago</strong>
-                    <span>Registra el pago del pedido.</span>
+                    <span>Paga y cierra la orden para evitar acumulaciones.</span>
                 </a>
             </div>
         </div>
@@ -96,18 +96,15 @@
     </div>
 
     <div class="side-panel">
-        <h3>Resumen del delivery</h3>
+        <h3>Información del delivery</h3>
 
+        <p><strong>Nombre:</strong> {{ vendedor.usuario.nombre }}</p>
+        <p><strong>Dirección:</strong> {{ vendedor.direccion }}</p>
+        <p><strong>Teléfono:</strong> {{ vendedor.usuario.telefono }}</p>
         <p><strong>Nivel actual:</strong> {{ vendedor.nivel }}</p>
-        <p><strong>Total de ventas:</strong> {{ vendedor.total_ventas }}</p>
-        <p><strong>Pedidos realizados:</strong> {{ total_pedidos }}</p>
-
-        <hr>
-
-        <h3>Flujo correcto</h3>
-        <p>
-            El delivery revisa una tienda, crea un pedido y agrega productos del catálogo de esa tienda.
-        </p>
+        <p><strong>Total de entregas:</strong> {{ vendedor.total_ventas }}</p>
+        <p><strong>Pedidos registrados:</strong> {{ total_pedidos }}</p>
+        <p><strong>Pagos registrados:</strong> {{ total_pagos }}</p>
     </div>
 
 </div>
