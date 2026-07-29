@@ -1,0 +1,62 @@
+{% extends 'comercial/base.html' %}
+
+{% block contenido %}
+
+<h2>Mis pedidos a empresas</h2>
+
+<a href="{% url 'crear_pedido_empresa_tendero' %}" class="boton">Crear pedido</a>
+<a href="{% url 'crear_detalle_empresa_tendero' %}" class="boton">Agregar producto</a>
+<a href="{% url 'crear_pago_empresa_tendero' %}" class="boton">Pagar pedido</a>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Empresa</th>
+        <th>Fecha</th>
+        <th>Estado</th>
+        <th>Total</th>
+        <th>Detalles</th>
+        <th>Acciones</th>
+    </tr>
+
+    {% for pedido in pedidos %}
+    <tr>
+        <td>{{ pedido.id }}</td>
+        <td>{{ pedido.empresa.razon_social }}</td>
+        <td>{{ pedido.fecha_pedido|date:"d/m/Y H:i" }}</td>
+        <td>{{ pedido.get_estado_display }}</td>
+        <td>${{ pedido.total|floatformat:2 }}</td>
+        <td>
+            <a href="{% url 'detalle_pedido_empresa_tendero' pedido.id %}" class="boton boton-tabla">
+                Ver detalle ({{ pedido.obtener_detalles }})
+            </a>
+        </td>
+        <td>
+            {% if pedido.estado == "PENDIENTE" or pedido.estado == "CONFIRMADO" or pedido.estado == "PAGADO" or pedido.estado == "EN_PREPARACION" %}
+                <form method="post" action="{% url 'cancelar_pedido_empresa_tendero' pedido.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">Cancelar</button>
+                </form>
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="7">
+            <div class="empty-state">
+                <strong>No tienes compras registradas</strong>
+                <p>Crea una orden, selecciona una empresa y agrega sus productos.</p>
+            </div>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<div class="aviso-informativo">
+    <strong>Control de stock</strong>
+    <p>
+        Al agregar productos se reserva el stock de la empresa. Si cancelas antes de la entrega, el stock se libera o se devuelve automáticamente. Cuando la empresa entrega, la cantidad se agrega al inventario de tu tienda.
+    </p>
+</div>
+
+{% endblock %}

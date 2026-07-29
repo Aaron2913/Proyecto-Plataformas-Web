@@ -15,6 +15,9 @@ from .views import ProductoTiendaViewSet
 from .views import PedidoViewSet
 from .views import DetallePedidoViewSet
 from .views import PagoViewSet
+from .views import PedidoEmpresaViewSet
+from .views import DetallePedidoEmpresaViewSet
+from .views import PagoPedidoEmpresaViewSet
 from .views import FacturaViewSet
 from .views import ComisionViewSet
 from .views import SuscripcionViewSet
@@ -34,6 +37,9 @@ router.register(r'productos-tienda', ProductoTiendaViewSet)
 router.register(r'pedidos', PedidoViewSet)
 router.register(r'detalles-pedido', DetallePedidoViewSet)
 router.register(r'pagos', PagoViewSet)
+router.register(r'pedidos-empresa', PedidoEmpresaViewSet)
+router.register(r'detalles-pedido-empresa', DetallePedidoEmpresaViewSet)
+router.register(r'pagos-pedido-empresa', PagoPedidoEmpresaViewSet)
 router.register(r'facturas', FacturaViewSet)
 router.register(r'comisiones', ComisionViewSet)
 router.register(r'suscripciones', SuscripcionViewSet)
@@ -59,10 +65,21 @@ urlpatterns = [
     path('empresa/inventario/crear/', views.crear_inventario_empresa, name='crear_inventario_empresa'),
     path('empresa/tiendas/', views.tiendas_empresa, name='tiendas_empresa'),
     path('empresa/pedidos/', views.pedidos_empresa, name='pedidos_empresa'),
+    path('empresa/pedidos/<int:pedido_id>/confirmar/', views.confirmar_pedido_empresa, name='confirmar_pedido_empresa'),
+    path('empresa/pedidos/<int:pedido_id>/preparar/', views.preparar_pedido_empresa, name='preparar_pedido_empresa'),
+    path('empresa/pedidos/<int:pedido_id>/entregar/', views.entregar_pedido_empresa, name='entregar_pedido_empresa'),
 
     path('tendero/inicio/', views.inicio_tendero, name='inicio_tendero'),
     path('tendero/productos/', views.productos_tendero, name='productos_tendero'),
     path('tendero/productos/crear/', views.crear_producto_tendero, name='crear_producto_tendero'),
+    path('tendero/catalogo-empresas/', views.catalogo_empresas_tendero, name='catalogo_empresas_tendero'),
+    path('tendero/compras/', views.pedidos_empresa_tendero, name='pedidos_empresa_tendero'),
+    path('tendero/compras/crear/', views.crear_pedido_empresa_tendero, name='crear_pedido_empresa_tendero'),
+    path('tendero/compras/detalle/crear/', views.crear_detalle_empresa_tendero, name='crear_detalle_empresa_tendero'),
+    path('tendero/compras/<int:pedido_id>/detalle/', views.detalle_pedido_empresa_tendero, name='detalle_pedido_empresa_tendero'),
+    path('tendero/compras/<int:pedido_id>/cancelar/', views.cancelar_pedido_empresa_tendero, name='cancelar_pedido_empresa_tendero'),
+    path('tendero/pagos-empresa/', views.pagos_empresa_tendero, name='pagos_empresa_tendero'),
+    path('tendero/pagos-empresa/crear/', views.crear_pago_empresa_tendero, name='crear_pago_empresa_tendero'),
     path('tendero/pedidos/', views.pedidos_tendero, name='pedidos_tendero'),
     path('tendero/pedidos/<int:pedido_id>/confirmar/', views.confirmar_pedido_tendero, name='confirmar_pedido_tendero'),
     path('tendero/pedidos/<int:pedido_id>/preparar/', views.preparar_pedido_tendero, name='preparar_pedido_tendero'),
@@ -71,6 +88,8 @@ urlpatterns = [
     path('vendedor/inicio/', views.inicio_vendedor, name='inicio_vendedor'),
     path('vendedor/catalogo/', views.catalogo_vendedor, name='catalogo_vendedor'),
     path('vendedor/pedidos/', views.pedidos_vendedor, name='pedidos_vendedor'),
+    path('pedidos/<int:pedido_id>/detalle/', views.detalle_pedido, name='detalle_pedido'),
+    path('pedidos-empresa/<int:pedido_id>/detalle/', views.detalle_pedido_empresa_tendero, name='detalle_pedido_empresa'),
     path('vendedor/pedidos/crear/', views.crear_pedido_vendedor, name='crear_pedido_vendedor'),
     path('vendedor/pedidos/<int:pedido_id>/cancelar/', views.cancelar_pedido_vendedor, name='cancelar_pedido_vendedor'),
     path('vendedor/detalle/crear/', views.crear_detalle_vendedor, name='crear_detalle_vendedor'),

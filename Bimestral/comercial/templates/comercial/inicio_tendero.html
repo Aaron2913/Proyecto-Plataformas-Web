@@ -6,7 +6,7 @@
     <div>
         <h2>Panel del tendero</h2>
         <p>
-            Administra los productos disponibles en tu tienda y revisa los pedidos realizados por delivery.
+            Compra productos a empresas proveedoras, controla el stock de tu tienda y atiende los pedidos realizados por delivery.
         </p>
     </div>
 
@@ -55,15 +55,21 @@
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon">PE</div>
-                <p>Pedidos recibidos</p>
+                <div class="stat-icon">CE</div>
+                <p>Compras a empresas</p>
+                <div class="valor">{{ total_compras_empresa }}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">PD</div>
+                <p>Pedidos de delivery</p>
                 <div class="valor">{{ total_pedidos }}</div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon">EM</div>
-                <p>Empresas disponibles</p>
-                <div class="valor">{{ total_empresas }}</div>
+                <div class="stat-icon">PG</div>
+                <p>Pagos a empresas</p>
+                <div class="valor">{{ total_pagos_empresa }}</div>
             </div>
         </div>
 
@@ -71,19 +77,34 @@
             <h3>Acciones rápidas</h3>
 
             <div class="quick-actions">
-                <a href="{% url 'crear_producto_tendero' %}" class="quick-action">
-                    <strong>Agregar producto</strong>
-                    <span>Selecciona productos disponibles de cualquier empresa proveedora.</span>
+                <a href="{% url 'catalogo_empresas_tendero' %}" class="quick-action">
+                    <strong>Catálogo de empresas</strong>
+                    <span>Consulta productos y stock disponible de cada proveedor.</span>
+                </a>
+
+                <a href="{% url 'crear_pedido_empresa_tendero' %}" class="quick-action">
+                    <strong>Crear compra</strong>
+                    <span>Genera una orden nueva para una empresa proveedora.</span>
+                </a>
+
+                <a href="{% url 'crear_detalle_empresa_tendero' %}" class="quick-action">
+                    <strong>Agregar productos</strong>
+                    <span>Añade productos a una orden abierta y reserva el stock.</span>
+                </a>
+
+                <a href="{% url 'crear_pago_empresa_tendero' %}" class="quick-action">
+                    <strong>Pagar compra</strong>
+                    <span>Paga la orden y cierra el pedido para nuevos productos.</span>
                 </a>
 
                 <a href="{% url 'productos_tendero' %}" class="quick-action">
-                    <strong>Ver productos</strong>
-                    <span>Consulta precios y stock de la tienda.</span>
+                    <strong>Inventario de tienda</strong>
+                    <span>Consulta el stock recibido y disponible para delivery.</span>
                 </a>
 
                 <a href="{% url 'pedidos_tendero' %}" class="quick-action">
-                    <strong>Pedidos recibidos</strong>
-                    <span>Revisa las compras realizadas por delivery.</span>
+                    <strong>Pedidos de delivery</strong>
+                    <span>Confirma, prepara y entrega las compras de delivery.</span>
                 </a>
             </div>
         </div>
@@ -91,15 +112,39 @@
     </div>
 
     <div class="side-panel">
-        <h3>Responsabilidad del tendero</h3>
+        <h3>Información de la tienda</h3>
+
+        <p><strong>Nombre:</strong> {{ tienda.nombre_tienda }}</p>
+        <p><strong>Dirección:</strong> {{ tienda.direccion }}</p>
+        <p><strong>Sector:</strong> {{ tienda.sector }}</p>
+        <p><strong>Teléfono:</strong> {{ tienda.usuario.telefono }}</p>
         <p>
-            El tendero mantiene el catálogo real de la tienda. El delivery ya no compra directamente a la empresa.
+            <strong>Fecha de apertura:</strong>
+            {% if tienda.fecha_apertura %}
+                {{ tienda.fecha_apertura|date:"d/m/Y" }}
+            {% else %}
+                No registrada
+            {% endif %}
+        </p>
+        <p>
+            <strong>Referencia:</strong>
+            {% if tienda.referencia_ubicacion %}
+                {{ tienda.referencia_ubicacion }}
+            {% else %}
+                Ubicada en el sector {{ tienda.sector }}.
+            {% endif %}
         </p>
 
         <hr>
 
-        <p><strong>Dirección:</strong> {{ tienda.direccion }}</p>
-        <p><strong>Sector:</strong> {{ tienda.sector }}</p>
+        <h3>Descripción</h3>
+        <p>
+            {% if tienda.descripcion_tienda %}
+                {{ tienda.descripcion_tienda }}
+            {% else %}
+                {{ tienda.nombre_tienda }} ofrece productos de distintas empresas proveedoras y atiende pedidos de delivery dentro de su zona.
+            {% endif %}
+        </p>
     </div>
 
 </div>

@@ -1,4 +1,5 @@
 from django.db import models, transaction
+from django.urls import reverse
 
 
 class Usuario(models.Model):
@@ -62,6 +63,51 @@ class Usuario(models.Model):
 
         return "login"
 
+    @classmethod
+    def obtener_usuario_sesion(cls, request):
+        usuario_id = request.session.get("usuario_id")
+
+        if not usuario_id:
+            return None
+
+        return cls.objects.filter(id=usuario_id, estado="ACTIVO").first()
+
+    @classmethod
+    def obtener_redireccion_acceso(cls, request, tipo_requerido=None):
+        usuario = cls.obtener_usuario_sesion(request)
+
+        if usuario is None:
+            return "login"
+
+        if tipo_requerido is not None and usuario.tipo_usuario != tipo_requerido:
+            return "inicio"
+
+        return None
+
+    @classmethod
+    def obtener_resumen_sistema(cls):
+        return {
+            "usuarios": Usuario.objects.count(),
+            "empresas": Empresa.objects.count(),
+            "tenderos": Tienda.objects.count(),
+            "vendedores": Vendedor.objects.count(),
+            "productos_empresa": Producto.objects.count(),
+            "inventarios_empresa": Inventario.objects.count(),
+            "productos_tienda": ProductoTienda.objects.count(),
+            "pedidos": Pedido.objects.count(),
+            "detalles_pedido": DetallePedido.objects.count(),
+            "pagos": Pago.objects.count(),
+            "pedidos_empresa": PedidoEmpresa.objects.count(),
+            "detalles_pedido_empresa": DetallePedidoEmpresa.objects.count(),
+            "pagos_pedido_empresa": PagoPedidoEmpresa.objects.count(),
+            "facturas": Factura.objects.count(),
+            "comisiones": Comision.objects.count(),
+            "suscripciones": Suscripcion.objects.count(),
+            "calificaciones": Calificacion.objects.count(),
+            "notificaciones": Notificacion.objects.count(),
+            "tutoriales": Tutorial.objects.count(),
+        }
+
 
 class Empresa(models.Model):
     ESTADO_VALIDACION = (
@@ -79,6 +125,8 @@ class Empresa(models.Model):
     ruc = models.CharField(max_length=13, unique=True)
     direccion = models.CharField(max_length=200)
     sector = models.CharField(max_length=100)
+    fecha_fundacion = models.DateField(null=True, blank=True)
+    historia = models.TextField(blank=True, default="")
     limite_compra = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     valor_base_sector = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     estado_validacion = models.CharField(
@@ -117,13 +165,12 @@ class Empresa(models.Model):
 
     def listar_tiendas(self):
         return Tienda.objects.filter(
-            productos_tienda__producto__empresa=self
+            models.Q(productos_tienda__producto__empresa=self)
+            | models.Q(pedidos_a_empresas__empresa=self)
         ).distinct()
 
     def listar_pedidos_recibidos(self):
-        return Pedido.objects.filter(
-            detalles__producto_tienda__producto__empresa=self
-        ).distinct()
+        return PedidoEmpresa.objects.filter(empresa=self).order_by("-fecha_pedido")
 
     def contar_productos(self):
         return self.listar_productos().count()
@@ -175,6 +222,77 @@ class Empresa(models.Model):
         self.estado_validacion = "APROBADA"
         self.save()
         return "Empresa validada correctamente"
+
+    @classmethod
+    def obtener_actual_desde_request(cls, request):
+        return cls.obtener_por_usuario_id(request.session.get("usuario_id"))
+
+    def obtener_contexto_productos(self):
+        return {
+            "empresa": self,
+            "productos": self.listar_productos(),
+        }
+
+    def crear_inventario(self, formulario):
+        inventario = formulario.save(commit=False)
+
+        if inventario.producto.empresa != self:
+            raise ValueError("La empresa solo puede registrar inventario de sus propios productos.")
+
+        inventario.save()
+        return inventario
+
+    def obtener_contexto_inventarios(self):
+        return {
+            "empresa": self,
+            "inventarios": self.listar_inventarios(),
+        }
+
+    def obtener_contexto_tiendas(self):
+        return {
+            "empresa": self,
+            "tiendas": self.listar_tiendas(),
+        }
+
+    def obtener_contexto_pedidos_recibidos(self):
+        return {
+            "empresa": self,
+            "pedidos": self.listar_pedidos_recibidos(),
+        }
+
+    def ejecutar_accion_pedido_recibido(self, pedido_id, accion):
+        pedido = self.pedidos_de_tiendas.filter(id=pedido_id).first()
+
+        if pedido is None:
+            return "Pedido no encontrado"
+
+        if accion == "CONFIRMAR":
+            return pedido.confirmar_pedido()
+
+        if accion == "PREPARAR":
+            return pedido.pasar_a_preparacion()
+
+        if accion == "ENTREGAR":
+            return pedido.entregar_pedido()
+
+        return "Acción no válida"
+
+    def obtener_contexto_detalle_pedido_empresa(self, pedido_id):
+        pedido = self.pedidos_de_tiendas.select_related(
+            "tienda__usuario",
+            "empresa__usuario",
+        ).filter(id=pedido_id).first()
+
+        if pedido is None:
+            return None
+
+        return {
+            "pedido": pedido,
+            "detalles": pedido.detalles.select_related("producto__empresa").all(),
+            "pago": PagoPedidoEmpresa.objects.filter(pedido=pedido).first(),
+            "volver_url": reverse("pedidos_empresa"),
+            "titulo_origen": "Pedidos recibidos",
+        }
 
 
 class Vendedor(models.Model):
@@ -240,10 +358,10 @@ class Vendedor(models.Model):
         return ProductoTienda.objects.filter(disponible=True)
 
     def listar_pedidos(self):
-        return self.pedidos.all()
+        return self.pedidos.all().order_by("-fecha_pedido")
 
     def listar_pagos(self):
-        return Pago.objects.filter(pedido__vendedor=self)
+        return Pago.objects.filter(pedido__vendedor=self).order_by("-fecha_pago")
 
     def contar_productos_disponibles(self):
         return self.listar_catalogo().count()
@@ -273,15 +391,37 @@ class Vendedor(models.Model):
         return pedido
 
     def configurar_formulario_detalle(self, formulario):
-        formulario.fields["pedido"].queryset = self.listar_pedidos().filter(estado__in=["PENDIENTE", "CONFIRMADO"])
+        # Una orden pagada, preparada, entregada o cancelada queda cerrada.
+        # Así los nuevos productos no se acumulan en una compra anterior.
+        formulario.fields["pedido"].queryset = self.listar_pedidos().filter(
+            estado__in=["PENDIENTE", "CONFIRMADO"]
+        ).exclude(pago__estado_pago="APROBADO")
         formulario.fields["producto_tienda"].queryset = ProductoTienda.objects.filter(
             disponible=True,
             stock_actual__gt=models.F("stock_reservado")
         )
+        formulario.fields["pedido"].label_from_instance = lambda pedido: (
+            "Pedido #%s - %s - $%s" % (
+                pedido.id,
+                pedido.obtener_nombre_tienda(),
+                pedido.total,
+            )
+        )
         return formulario
 
     def configurar_formulario_pago(self, formulario):
-        formulario.fields["pedido"].queryset = self.listar_pedidos().filter(estado__in=["PENDIENTE", "CONFIRMADO"])
+        formulario.fields["pedido"].queryset = self.listar_pedidos().filter(
+            estado__in=["PENDIENTE", "CONFIRMADO"],
+            detalles__isnull=False,
+            pago__isnull=True,
+        ).distinct()
+        formulario.fields["pedido"].label_from_instance = lambda pedido: (
+            "Pedido #%s - %s - Total $%s" % (
+                pedido.id,
+                pedido.obtener_nombre_tienda(),
+                pedido.total,
+            )
+        )
         return formulario
 
     def agregar_detalle_pedido(self, formulario):
@@ -289,6 +429,11 @@ class Vendedor(models.Model):
 
         if detalle.pedido.vendedor != self:
             raise ValueError("El pedido seleccionado no pertenece al vendedor actual.")
+
+        if not detalle.pedido.permite_agregar_productos():
+            raise ValueError(
+                "El pedido ya está cerrado y no admite más productos. Cree un pedido nuevo."
+            )
 
         return detalle.registrar_detalle_con_reserva()
 
@@ -301,8 +446,37 @@ class Vendedor(models.Model):
         if pago.monto <= 0:
             raise ValueError("El monto del pago debe ser mayor a cero.")
 
-        pago.save()
-        pago.validar_pago()
+        with transaction.atomic():
+            pedido = Pedido.objects.select_for_update().get(
+                id=pago.pedido.id,
+                vendedor=self,
+            )
+
+            if pedido.estado not in ["PENDIENTE", "CONFIRMADO"]:
+                raise ValueError(
+                    "El pedido ya está cerrado y no puede volver a pagarse."
+                )
+
+            if pedido.detalles.count() == 0:
+                raise ValueError("El pedido no tiene productos para pagar.")
+
+            if Pago.objects.filter(pedido=pedido).exists():
+                raise ValueError("Este pedido ya tiene un pago registrado.")
+
+            pedido.actualizar_total()
+
+            if pago.monto != pedido.total:
+                raise ValueError(
+                    "El monto debe ser igual al total del pedido: $%s." % pedido.total
+                )
+
+            # Registrar un pago desde esta pantalla significa que fue pagado.
+            # El estado se aprueba automáticamente y el pedido queda cerrado.
+            pago.pedido = pedido
+            pago.estado_pago = "APROBADO"
+            pago.save()
+            pedido.pagar_y_descontar_stock()
+
         return pago
 
     def cancelar_pedido(self, pedido_id):
@@ -341,6 +515,34 @@ class Vendedor(models.Model):
         self.save()
         return self.nivel
 
+    @classmethod
+    def obtener_actual_desde_request(cls, request):
+        return cls.obtener_por_usuario_id(request.session.get("usuario_id"))
+
+    def obtener_contexto_catalogo(self):
+        return {
+            "productos_tienda": self.listar_catalogo(),
+        }
+
+    def obtener_contexto_pedidos(self):
+        return {
+            "vendedor": self,
+            "pedidos": self.listar_pedidos(),
+        }
+
+    def obtener_contexto_pagos(self):
+        return {
+            "pagos": self.listar_pagos(),
+        }
+
+    def listar_tutoriales(self):
+        return Tutorial.objects.all()
+
+    def obtener_contexto_tutoriales(self):
+        return {
+            "tutoriales": self.listar_tutoriales(),
+        }
+
 
 class Tienda(models.Model):
     ESTADO_VALIDACION = (
@@ -358,6 +560,9 @@ class Tienda(models.Model):
     ruc = models.CharField(max_length=13, unique=True)
     direccion = models.CharField(max_length=200)
     sector = models.CharField(max_length=100)
+    fecha_apertura = models.DateField(null=True, blank=True)
+    descripcion_tienda = models.TextField(blank=True, default="")
+    referencia_ubicacion = models.CharField(max_length=200, blank=True, default="")
     estado_validacion = models.CharField(
         max_length=30,
         choices=ESTADO_VALIDACION,
@@ -390,7 +595,7 @@ class Tienda(models.Model):
         return self.productos_tienda.all()
 
     def listar_pedidos_recibidos(self):
-        return self.pedidos_recibidos.all()
+        return self.pedidos_recibidos.all().order_by("-fecha_pedido")
 
     def contar_productos_tienda(self):
         return self.listar_productos_tienda().count()
@@ -398,16 +603,33 @@ class Tienda(models.Model):
     def contar_pedidos_recibidos(self):
         return self.listar_pedidos_recibidos().count()
 
+    def listar_pedidos_a_empresas(self):
+        return self.pedidos_a_empresas.all().order_by("-fecha_pedido")
+
+    def listar_pagos_a_empresas(self):
+        return PagoPedidoEmpresa.objects.filter(
+            pedido__tienda=self
+        ).order_by("-fecha_pago")
+
+    def contar_pedidos_a_empresas(self):
+        return self.listar_pedidos_a_empresas().count()
+
+    def contar_pagos_a_empresas(self):
+        return self.listar_pagos_a_empresas().count()
+
     def obtener_resumen_dashboard(self):
         return {
             "tienda": self,
             "total_productos": self.contar_productos_tienda(),
             "total_pedidos": self.contar_pedidos_recibidos(),
             "total_empresas": self.contar_empresas_disponibles(),
+            "total_compras_empresa": self.contar_pedidos_a_empresas(),
+            "total_pagos_empresa": self.contar_pagos_a_empresas(),
         }
 
     def listar_empresas_disponibles(self):
         return Empresa.objects.filter(
+            estado_validacion="APROBADA",
             productos__inventario__stock_actual__gt=models.F("productos__inventario__stock_reservado"),
             productos__disponible=True
         ).distinct()
@@ -421,6 +643,133 @@ class Tienda(models.Model):
             inventario__stock_actual__gt=models.F("inventario__stock_reservado")
         ).select_related("empresa", "inventario").distinct()
         return formulario
+
+    def configurar_formulario_pedido_empresa(self, formulario):
+        formulario.fields["empresa"].queryset = Empresa.objects.filter(
+            estado_validacion="APROBADA",
+            productos__disponible=True,
+            productos__inventario__stock_actual__gt=models.F(
+                "productos__inventario__stock_reservado"
+            ),
+        ).distinct()
+        return formulario
+
+    def crear_pedido_empresa(self, formulario):
+        pedido = formulario.save(commit=False)
+        pedido.tienda = self
+        pedido.estado = "PENDIENTE"
+        pedido.subtotal = 0
+        pedido.total = 0
+        pedido.save()
+        return pedido
+
+    def configurar_formulario_detalle_empresa(self, formulario):
+        formulario.fields["pedido"].queryset = self.listar_pedidos_a_empresas().filter(
+            estado__in=["PENDIENTE", "CONFIRMADO"]
+        ).exclude(pago__estado_pago="APROBADO")
+        productos_disponibles = Producto.objects.filter(
+            disponible=True,
+            empresa__estado_validacion="APROBADA",
+            inventario__stock_actual__gt=models.F("inventario__stock_reservado"),
+        ).select_related("empresa", "inventario").distinct()
+
+        pedido_id = formulario.data.get("pedido") if formulario.is_bound else None
+        if pedido_id:
+            pedido_seleccionado = self.listar_pedidos_a_empresas().filter(
+                id=pedido_id,
+                estado__in=["PENDIENTE", "CONFIRMADO"],
+            ).first()
+            if pedido_seleccionado is not None:
+                productos_disponibles = productos_disponibles.filter(
+                    empresa=pedido_seleccionado.empresa
+                )
+
+        formulario.fields["producto"].queryset = productos_disponibles
+        formulario.fields["pedido"].label_from_instance = lambda pedido: (
+            "Orden #%s - %s - $%s" % (
+                pedido.id,
+                pedido.empresa.razon_social,
+                pedido.total,
+            )
+        )
+        formulario.fields["producto"].label_from_instance = lambda producto: (
+            "%s - %s - Stock %s" % (
+                producto.empresa.razon_social,
+                producto.nombre,
+                producto.obtener_stock_disponible(),
+            )
+        )
+        return formulario
+
+    def agregar_detalle_empresa(self, formulario):
+        detalle = formulario.save(commit=False)
+
+        if detalle.pedido.tienda != self:
+            raise ValueError("La orden seleccionada no pertenece a la tienda actual.")
+
+        if not detalle.pedido.permite_agregar_productos():
+            raise ValueError(
+                "La orden ya está cerrada. Cree una nueva compra a la empresa."
+            )
+
+        return detalle.registrar_detalle_con_reserva()
+
+    def configurar_formulario_pago_empresa(self, formulario):
+        formulario.fields["pedido"].queryset = self.listar_pedidos_a_empresas().filter(
+            estado__in=["PENDIENTE", "CONFIRMADO"],
+            detalles__isnull=False,
+            pago__isnull=True,
+        ).distinct()
+        formulario.fields["pedido"].label_from_instance = lambda pedido: (
+            "Orden #%s - %s - Total $%s" % (
+                pedido.id,
+                pedido.empresa.razon_social,
+                pedido.total,
+            )
+        )
+        return formulario
+
+    def registrar_pago_empresa(self, formulario):
+        pago = formulario.save(commit=False)
+
+        if pago.pedido.tienda != self:
+            raise ValueError("La orden seleccionada no pertenece a la tienda actual.")
+
+        if pago.monto <= 0:
+            raise ValueError("El monto del pago debe ser mayor a cero.")
+
+        with transaction.atomic():
+            pedido = PedidoEmpresa.objects.select_for_update().get(
+                id=pago.pedido.id,
+                tienda=self,
+            )
+
+            if pedido.estado not in ["PENDIENTE", "CONFIRMADO"]:
+                raise ValueError("La orden ya está cerrada y no puede volver a pagarse.")
+
+            if pedido.detalles.count() == 0:
+                raise ValueError("La orden no tiene productos para pagar.")
+
+            if PagoPedidoEmpresa.objects.filter(pedido=pedido).exists():
+                raise ValueError("Esta orden ya tiene un pago registrado.")
+
+            pedido.actualizar_total()
+
+            if pago.monto != pedido.total:
+                raise ValueError(
+                    "El monto debe ser igual al total de la orden: $%s." % pedido.total
+                )
+
+            pago.pedido = pedido
+            pago.estado_pago = "APROBADO"
+            pago.save()
+            pedido.pagar_y_descontar_stock()
+
+        return pago
+
+    def cancelar_pedido_empresa(self, pedido_id):
+        pedido = self.pedidos_a_empresas.get(id=pedido_id)
+        return pedido.cancelar_pedido()
 
     def crear_producto_tienda(self, formulario):
         """
@@ -487,6 +836,66 @@ class Tienda(models.Model):
         self.estado_validacion = "APROBADA"
         self.save()
         return "Tienda validada correctamente"
+
+    @classmethod
+    def obtener_actual_desde_request(cls, request):
+        return cls.obtener_por_usuario_id(request.session.get("usuario_id"))
+
+    def listar_catalogo_empresas(self):
+        return Producto.objects.filter(
+            empresa__estado_validacion="APROBADA",
+            disponible=True,
+            inventario__stock_actual__gt=models.F("inventario__stock_reservado"),
+        ).select_related("empresa", "inventario").order_by(
+            "empresa__razon_social", "nombre"
+        )
+
+    def obtener_contexto_productos_tienda(self):
+        return {
+            "tienda": self,
+            "productos_tienda": self.listar_productos_tienda(),
+        }
+
+    def obtener_contexto_catalogo_empresas(self):
+        return {
+            "tienda": self,
+            "productos": self.listar_catalogo_empresas(),
+        }
+
+    def obtener_contexto_pedidos_empresa(self):
+        return {
+            "tienda": self,
+            "pedidos": self.listar_pedidos_a_empresas(),
+        }
+
+    def obtener_contexto_pagos_empresa(self):
+        return {
+            "tienda": self,
+            "pagos": self.listar_pagos_a_empresas(),
+        }
+
+    def obtener_contexto_pedidos_recibidos(self):
+        return {
+            "tienda": self,
+            "pedidos": self.listar_pedidos_recibidos(),
+        }
+
+    def obtener_contexto_detalle_pedido_empresa(self, pedido_id):
+        pedido = self.pedidos_a_empresas.select_related(
+            "tienda__usuario",
+            "empresa__usuario",
+        ).filter(id=pedido_id).first()
+
+        if pedido is None:
+            return None
+
+        return {
+            "pedido": pedido,
+            "detalles": pedido.detalles.select_related("producto__empresa").all(),
+            "pago": PagoPedidoEmpresa.objects.filter(pedido=pedido).first(),
+            "volver_url": reverse("pedidos_empresa_tendero"),
+            "titulo_origen": "Mis pedidos a empresas",
+        }
 
 
 class Producto(models.Model):
@@ -584,6 +993,14 @@ class Inventario(models.Model):
             return "Stock descontado"
         else:
             return "Stock insuficiente"
+
+    def devolver_stock(self, cantidad):
+        if cantidad > 0:
+            self.stock_actual = self.stock_actual + cantidad
+            self.save()
+            return "Stock devuelto a la empresa"
+
+        return "Cantidad incorrecta"
 
 
 class ProductoTienda(models.Model):
@@ -691,6 +1108,17 @@ class Pedido(models.Model):
 
     def obtener_detalles(self):
         return self.detalles.count()
+
+    def permite_agregar_productos(self):
+        estado_abierto = self.estado in ["PENDIENTE", "CONFIRMADO"]
+        pago_aprobado = Pago.objects.filter(
+            pedido=self,
+            estado_pago="APROBADO",
+        ).exists()
+        return estado_abierto and not pago_aprobado
+
+    def esta_cerrado(self):
+        return self.estado in ["PAGADO", "EN_PREPARACION", "ENTREGADO", "CANCELADO"]
 
     def obtener_nombre_tienda(self):
         if self.tienda is not None:
@@ -814,6 +1242,68 @@ class Pedido(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
+    @classmethod
+    def obtener_contexto_detalle_por_usuario(cls, usuario_id, tipo_usuario, pedido_id):
+        pedido = cls.objects.select_related(
+            "vendedor__usuario",
+            "tienda__usuario",
+        ).filter(id=pedido_id).first()
+
+        if pedido is None:
+            return None
+
+        detalles = pedido.detalles.select_related(
+            "producto",
+            "producto_tienda__producto__empresa",
+            "producto_tienda__tienda",
+        ).all()
+
+        volver_url = reverse("inicio")
+        titulo_origen = "Inicio"
+        es_empresa = False
+
+        if tipo_usuario == "VENDEDOR":
+            if pedido.vendedor.usuario_id != usuario_id:
+                return None
+
+            volver_url = reverse("pedidos_vendedor")
+            titulo_origen = "Mis pedidos"
+
+        elif tipo_usuario == "TENDERO":
+            if pedido.tienda is None or pedido.tienda.usuario_id != usuario_id:
+                return None
+
+            volver_url = reverse("pedidos_tendero")
+            titulo_origen = "Pedidos recibidos"
+
+        elif tipo_usuario == "EMPRESA":
+            empresa = Empresa.obtener_por_usuario_id(usuario_id)
+            detalles = detalles.filter(producto_tienda__producto__empresa=empresa)
+
+            if not detalles.exists():
+                return None
+
+            volver_url = reverse("pedidos_empresa")
+            titulo_origen = "Pedidos recibidos"
+            es_empresa = True
+
+        else:
+            return None
+
+        total_detalles = 0
+        for detalle in detalles:
+            total_detalles = total_detalles + detalle.subtotal
+
+        return {
+            "pedido": pedido,
+            "detalles": detalles,
+            "total_detalles": total_detalles,
+            "pago": Pago.objects.filter(pedido=pedido).first(),
+            "volver_url": volver_url,
+            "titulo_origen": titulo_origen,
+            "es_empresa": es_empresa,
+        }
+
 
 class DetallePedido(models.Model):
     pedido = models.ForeignKey(
@@ -867,6 +1357,11 @@ class DetallePedido(models.Model):
         return self.subtotal
 
     def validar_detalle_tienda(self):
+        if not self.pedido.permite_agregar_productos():
+            raise ValueError(
+                "El pedido ya está cerrado y no admite más productos. Cree un pedido nuevo."
+            )
+
         if self.producto_tienda is None:
             raise ValueError("Debe seleccionar un producto de una tienda.")
 
@@ -883,6 +1378,15 @@ class DetallePedido(models.Model):
 
     def registrar_detalle_con_reserva(self):
         with transaction.atomic():
+            # Se bloquea la orden durante la operación. Así un pago y una
+            # inserción de producto no pueden ejecutarse al mismo tiempo.
+            self.pedido = Pedido.objects.select_for_update().get(id=self.pedido_id)
+
+            if self.producto_tienda_id is not None:
+                self.producto_tienda = ProductoTienda.objects.select_for_update().get(
+                    id=self.producto_tienda_id
+                )
+
             self.validar_detalle_tienda()
 
             if self.producto_tienda is not None:
@@ -989,6 +1493,306 @@ class Pago(models.Model):
         self.estado_pago = "REEMBOLSADO"
         self.save()
         return "Reembolso registrado"
+
+
+class PedidoEmpresa(models.Model):
+    """Orden de abastecimiento realizada por una tienda a una empresa."""
+
+    ESTADO_PEDIDO = (
+        ("PENDIENTE", "Pendiente"),
+        ("CONFIRMADO", "Confirmado"),
+        ("PAGADO", "Pagado"),
+        ("EN_PREPARACION", "En preparación"),
+        ("ENTREGADO", "Entregado"),
+        ("CANCELADO", "Cancelado"),
+    )
+
+    tienda = models.ForeignKey(
+        Tienda,
+        on_delete=models.CASCADE,
+        related_name="pedidos_a_empresas",
+    )
+    empresa = models.ForeignKey(
+        Empresa,
+        on_delete=models.CASCADE,
+        related_name="pedidos_de_tiendas",
+    )
+    fecha_pedido = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(max_length=30, choices=ESTADO_PEDIDO, default="PENDIENTE")
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def __str__(self):
+        return "Orden empresa %s %s" % (self.id, self.estado)
+
+    def obtener_detalles(self):
+        return self.detalles.count()
+
+    def permite_agregar_productos(self):
+        estado_abierto = self.estado in ["PENDIENTE", "CONFIRMADO"]
+        pago_aprobado = PagoPedidoEmpresa.objects.filter(
+            pedido=self,
+            estado_pago="APROBADO",
+        ).exists()
+        return estado_abierto and not pago_aprobado
+
+    def obtener_total(self):
+        total = 0
+        for detalle in self.detalles.all():
+            total = total + detalle.subtotal
+        return total
+
+    def actualizar_total(self):
+        total = self.obtener_total()
+        self.subtotal = total
+        self.total = total
+        self.save()
+        return self.total
+
+    def confirmar_pedido(self):
+        with transaction.atomic():
+            pedido_bloqueado = PedidoEmpresa.objects.select_for_update().get(id=self.id)
+
+            if pedido_bloqueado.estado != "PENDIENTE":
+                return "La orden no está pendiente"
+
+            if pedido_bloqueado.detalles.count() == 0:
+                return "La orden no tiene productos"
+
+            pedido_bloqueado.estado = "CONFIRMADO"
+            pedido_bloqueado.save()
+            self.estado = pedido_bloqueado.estado
+
+        return "Orden confirmada"
+
+    def pagar_y_descontar_stock(self):
+        if self.estado not in ["PENDIENTE", "CONFIRMADO"]:
+            raise ValueError("La orden no se puede pagar en este estado")
+
+        if self.detalles.count() == 0:
+            raise ValueError("La orden no tiene productos")
+
+        with transaction.atomic():
+            pedido_bloqueado = PedidoEmpresa.objects.select_for_update().get(id=self.id)
+
+            if pedido_bloqueado.estado not in ["PENDIENTE", "CONFIRMADO"]:
+                raise ValueError("La orden ya fue cerrada")
+
+            for detalle in pedido_bloqueado.detalles.select_related("producto"):
+                inventario = Inventario.objects.select_for_update().get(
+                    producto=detalle.producto
+                )
+                resultado = inventario.descontar_stock(detalle.cantidad)
+
+                if "insuficiente" in resultado.lower():
+                    raise ValueError(resultado)
+
+            pedido_bloqueado.estado = "PAGADO"
+            pedido_bloqueado.save()
+            self.estado = pedido_bloqueado.estado
+
+        return "Orden pagada y stock de empresa descontado"
+
+    def pasar_a_preparacion(self):
+        with transaction.atomic():
+            pedido_bloqueado = PedidoEmpresa.objects.select_for_update().get(id=self.id)
+
+            if pedido_bloqueado.estado != "PAGADO":
+                return "La orden debe estar pagada"
+
+            pedido_bloqueado.estado = "EN_PREPARACION"
+            pedido_bloqueado.save()
+            self.estado = pedido_bloqueado.estado
+
+        return "Orden en preparación"
+
+    def entregar_pedido(self):
+        with transaction.atomic():
+            pedido_bloqueado = PedidoEmpresa.objects.select_for_update().select_related(
+                "tienda"
+            ).get(id=self.id)
+
+            if pedido_bloqueado.estado != "EN_PREPARACION":
+                return "La orden debe estar en preparación"
+
+            for detalle in pedido_bloqueado.detalles.select_related("producto"):
+                producto_tienda, creado = ProductoTienda.objects.select_for_update().get_or_create(
+                    tienda=pedido_bloqueado.tienda,
+                    producto=detalle.producto,
+                    defaults={
+                        "precio_venta": detalle.producto.precio,
+                        "stock_actual": 0,
+                        "stock_reservado": 0,
+                        "disponible": True,
+                    },
+                )
+                producto_tienda.stock_actual = producto_tienda.stock_actual + detalle.cantidad
+                producto_tienda.disponible = True
+                producto_tienda.save()
+
+            pedido_bloqueado.estado = "ENTREGADO"
+            pedido_bloqueado.save()
+            self.estado = pedido_bloqueado.estado
+
+        return "Orden entregada y stock agregado a la tienda"
+
+    def cancelar_pedido(self):
+        with transaction.atomic():
+            pedido_bloqueado = PedidoEmpresa.objects.select_for_update().get(id=self.id)
+
+            if pedido_bloqueado.estado not in ["PENDIENTE", "CONFIRMADO", "PAGADO", "EN_PREPARACION"]:
+                return "La orden no se puede cancelar"
+
+            for detalle in pedido_bloqueado.detalles.select_related("producto"):
+                inventario = Inventario.objects.select_for_update().get(
+                    producto=detalle.producto
+                )
+
+                if pedido_bloqueado.estado in ["PENDIENTE", "CONFIRMADO"]:
+                    inventario.liberar_stock(detalle.cantidad)
+                else:
+                    inventario.devolver_stock(detalle.cantidad)
+
+            if pedido_bloqueado.estado in ["PAGADO", "EN_PREPARACION"]:
+                pago = PagoPedidoEmpresa.objects.select_for_update().filter(
+                    pedido=pedido_bloqueado
+                ).first()
+                if pago is not None:
+                    pago.estado_pago = "REEMBOLSADO"
+                    pago.save()
+
+            pedido_bloqueado.estado = "CANCELADO"
+            pedido_bloqueado.save()
+            self.estado = pedido_bloqueado.estado
+
+        return "Orden cancelada y stock de empresa restaurado"
+
+    @classmethod
+    def obtener_contexto_detalle_por_usuario(cls, usuario_id, tipo_usuario, pedido_id):
+        if tipo_usuario == "TENDERO":
+            tienda = Tienda.objects.filter(usuario_id=usuario_id).first()
+
+            if tienda is None:
+                return None
+
+            return tienda.obtener_contexto_detalle_pedido_empresa(pedido_id)
+
+        if tipo_usuario == "EMPRESA":
+            empresa = Empresa.objects.filter(usuario_id=usuario_id).first()
+
+            if empresa is None:
+                return None
+
+            return empresa.obtener_contexto_detalle_pedido_empresa(pedido_id)
+
+        return None
+
+
+class DetallePedidoEmpresa(models.Model):
+    pedido = models.ForeignKey(
+        PedidoEmpresa,
+        on_delete=models.CASCADE,
+        related_name="detalles",
+    )
+    producto = models.ForeignKey(
+        Producto,
+        on_delete=models.CASCADE,
+        related_name="detalles_pedidos_empresa",
+    )
+    cantidad = models.IntegerField(default=1)
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def __str__(self):
+        return "%s %s" % (self.producto.nombre, self.cantidad)
+
+    def calcular_subtotal(self):
+        return self.cantidad * self.precio_unitario
+
+    def validar_detalle(self, inventario=None):
+        if not self.pedido.permite_agregar_productos():
+            raise ValueError(
+                "La orden ya está cerrada. Cree una nueva compra a la empresa."
+            )
+
+        if self.producto.empresa != self.pedido.empresa:
+            raise ValueError("El producto no pertenece a la empresa seleccionada.")
+
+        if self.cantidad <= 0:
+            raise ValueError("La cantidad debe ser mayor a cero.")
+
+        inventario_validar = inventario
+        if inventario_validar is None:
+            if not hasattr(self.producto, "inventario"):
+                raise ValueError("El producto no tiene inventario en la empresa.")
+            inventario_validar = self.producto.inventario
+
+        if not inventario_validar.puede_reservar_stock(self.cantidad):
+            raise ValueError("Stock insuficiente en la empresa.")
+
+        return True
+
+    def registrar_detalle_con_reserva(self):
+        with transaction.atomic():
+            self.pedido = PedidoEmpresa.objects.select_for_update().get(id=self.pedido_id)
+            self.producto = Producto.objects.select_related("empresa", "inventario").get(
+                id=self.producto_id
+            )
+            inventario = Inventario.objects.select_for_update().get(producto=self.producto)
+
+            self.validar_detalle(inventario)
+
+            if self.precio_unitario == 0:
+                self.precio_unitario = self.producto.precio
+
+            self.subtotal = self.calcular_subtotal()
+            resultado = inventario.reservar_stock(self.cantidad)
+
+            if "insuficiente" in resultado.lower():
+                raise ValueError(resultado)
+
+            self.save()
+            self.pedido.actualizar_total()
+            return self
+
+    def liberar_stock(self):
+        if hasattr(self.producto, "inventario"):
+            return self.producto.inventario.liberar_stock(self.cantidad)
+        return "No existe inventario"
+
+    def descontar_stock(self):
+        if hasattr(self.producto, "inventario"):
+            return self.producto.inventario.descontar_stock(self.cantidad)
+        return "No existe inventario"
+
+    def devolver_stock(self):
+        if hasattr(self.producto, "inventario"):
+            return self.producto.inventario.devolver_stock(self.cantidad)
+        return "No existe inventario"
+
+    def save(self, *args, **kwargs):
+        if self.precio_unitario == 0:
+            self.precio_unitario = self.producto.precio
+        self.subtotal = self.calcular_subtotal()
+        super().save(*args, **kwargs)
+
+
+class PagoPedidoEmpresa(models.Model):
+    METODO_PAGO = Pago.METODO_PAGO
+    ESTADO_PAGO = Pago.ESTADO_PAGO
+
+    pedido = models.OneToOneField(
+        PedidoEmpresa,
+        on_delete=models.CASCADE,
+        related_name="pago",
+    )
+    metodo_pago = models.CharField(max_length=50, choices=METODO_PAGO)
+    monto = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    estado_pago = models.CharField(max_length=30, choices=ESTADO_PAGO, default="PENDIENTE")
+    fecha_pago = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "Pago orden empresa %s %s" % (self.pedido.id, self.estado_pago)
 
 
 class Factura(models.Model):

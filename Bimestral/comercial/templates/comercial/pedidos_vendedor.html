@@ -26,10 +26,14 @@
         <td>{{ pedido.obtener_nombre_tienda }}</td>
         <td>{{ pedido.obtener_empresa_proveedora }}</td>
         <td>{{ pedido.fecha_pedido }}</td>
-        <td>{{ pedido.estado }}</td>
-        <td>{{ pedido.subtotal }}</td>
-        <td>{{ pedido.total }}</td>
-        <td>{{ pedido.obtener_detalles }}</td>
+        <td>{{ pedido.get_estado_display }}</td>
+        <td>${{ pedido.subtotal|floatformat:2 }}</td>
+        <td>${{ pedido.total|floatformat:2 }}</td>
+        <td>
+            <a href="{% url 'detalle_pedido' pedido.id %}" class="boton boton-tabla">
+                Ver detalle ({{ pedido.obtener_detalles }})
+            </a>
+        </td>
         <td>
             {% if pedido.estado == "PENDIENTE" %}
                 <form method="post" action="{% url 'cancelar_pedido_vendedor' pedido.id %}" style="display:inline;">

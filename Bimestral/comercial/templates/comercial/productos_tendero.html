@@ -2,9 +2,11 @@
 
 {% block contenido %}
 
-<h2>Productos de mi tienda</h2>
+<h2>Inventario de mi tienda</h2>
 
-<a href="{% url 'crear_producto_tendero' %}" class="boton">Agregar producto</a>
+<a href="{% url 'catalogo_empresas_tendero' %}" class="boton">Ver catálogo de empresas</a>
+<a href="{% url 'crear_pedido_empresa_tendero' %}" class="boton">Crear pedido a empresa</a>
+<a href="{% url 'pedidos_empresa_tendero' %}" class="boton boton-secundario">Ver mis compras</a>
 
 <table>
     <tr>
@@ -22,7 +24,7 @@
     <tr>
         <td>{{ item.producto.nombre }}</td>
         <td>{{ item.producto.empresa.razon_social }}</td>
-        <td>{{ item.precio_venta }}</td>
+        <td>${{ item.precio_venta|floatformat:2 }}</td>
         <td>{{ item.producto.categoria }}</td>
         <td>{{ item.stock_actual }}</td>
         <td>{{ item.stock_reservado }}</td>
@@ -34,7 +36,7 @@
         <td colspan="8">
             <div class="empty-state">
                 <strong>No hay productos en la tienda</strong>
-                <p>Agrega productos disponibles de cualquier empresa proveedora para que el delivery pueda comprarlos.</p>
+                <p>Crea y paga un pedido a una empresa. Cuando la empresa lo entregue, el stock aparecerá aquí.</p>
             </div>
         </td>
     </tr>

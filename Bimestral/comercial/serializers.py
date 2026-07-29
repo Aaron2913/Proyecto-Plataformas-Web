@@ -10,6 +10,9 @@ from .models import ProductoTienda
 from .models import Pedido
 from .models import DetallePedido
 from .models import Pago
+from .models import PedidoEmpresa
+from .models import DetallePedidoEmpresa
+from .models import PagoPedidoEmpresa
 from .models import Factura
 from .models import Comision
 from .models import Suscripcion
@@ -44,6 +47,8 @@ class EmpresaSerializer(serializers.HyperlinkedModelSerializer):
             'ruc',
             'direccion',
             'sector',
+            'fecha_fundacion',
+            'historia',
             'limite_compra',
             'valor_base_sector',
             'estado_validacion',
@@ -77,6 +82,9 @@ class TiendaSerializer(serializers.HyperlinkedModelSerializer):
             'ruc',
             'direccion',
             'sector',
+            'fecha_apertura',
+            'descripcion_tienda',
+            'referencia_ubicacion',
             'estado_validacion',
         ]
 
@@ -166,6 +174,33 @@ class PagoSerializer(serializers.HyperlinkedModelSerializer):
             'monto',
             'estado_pago',
             'fecha_pago',
+        ]
+
+
+class PedidoEmpresaSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = PedidoEmpresa
+        fields = [
+            'url', 'id', 'tienda', 'empresa', 'fecha_pedido',
+            'estado', 'subtotal', 'total',
+        ]
+
+
+class DetallePedidoEmpresaSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = DetallePedidoEmpresa
+        fields = [
+            'url', 'id', 'pedido', 'producto', 'cantidad',
+            'precio_unitario', 'subtotal',
+        ]
+
+
+class PagoPedidoEmpresaSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = PagoPedidoEmpresa
+        fields = [
+            'url', 'id', 'pedido', 'metodo_pago', 'monto',
+            'estado_pago', 'fecha_pago',
         ]
 
 

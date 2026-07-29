@@ -14,6 +14,9 @@ from .models import ProductoTienda
 from .models import Pedido
 from .models import DetallePedido
 from .models import Pago
+from .models import PedidoEmpresa
+from .models import DetallePedidoEmpresa
+from .models import PagoPedidoEmpresa
 from .models import Factura
 from .models import Comision
 from .models import Suscripcion
@@ -30,10 +33,12 @@ from .forms import UsuarioVendedorForm
 from .forms import RegistroVendedorForm
 from .forms import ProductoEmpresaForm
 from .forms import InventarioEmpresaForm
-from .forms import ProductoTiendaForm
 from .forms import PedidoVendedorForm
 from .forms import DetallePedidoVendedorForm
 from .forms import PagoVendedorForm
+from .forms import PedidoEmpresaTenderoForm
+from .forms import DetallePedidoEmpresaTenderoForm
+from .forms import PagoPedidoEmpresaTenderoForm
 
 from .serializers import UsuarioSerializer
 from .serializers import EmpresaSerializer
@@ -45,6 +50,9 @@ from .serializers import ProductoTiendaSerializer
 from .serializers import PedidoSerializer
 from .serializers import DetallePedidoSerializer
 from .serializers import PagoSerializer
+from .serializers import PedidoEmpresaSerializer
+from .serializers import DetallePedidoEmpresaSerializer
+from .serializers import PagoPedidoEmpresaSerializer
 from .serializers import FacturaSerializer
 from .serializers import ComisionSerializer
 from .serializers import SuscripcionSerializer
@@ -57,6 +65,7 @@ from .serializers import TutorialSerializer
 # LOGIN Y SESIÓN
 # ==========================
 
+
 def login_usuario(request):
     mensaje = ""
 
@@ -64,25 +73,27 @@ def login_usuario(request):
         formulario = LoginForm(request.POST)
 
         if formulario.is_valid():
-            correo = formulario.cleaned_data["correo"]
-            contrasena = formulario.cleaned_data["contrasena"]
-
-            usuario = Usuario.autenticar(correo, contrasena)
+            usuario = Usuario.autenticar(
+                formulario.cleaned_data["correo"],
+                formulario.cleaned_data["contrasena"],
+            )
 
             if usuario is not None:
                 usuario.guardar_en_sesion(request)
                 return redirect("inicio")
-            else:
-                mensaje = "Correo o contraseña incorrectos"
+
+            mensaje = "Correo o contraseña incorrectos"
     else:
         formulario = LoginForm()
 
-    informacion_template = {
-        "formulario": formulario,
-        "mensaje": mensaje
-    }
-
-    return render(request, "comercial/login.html", informacion_template)
+    return render(
+        request,
+        "comercial/login.html",
+        {
+            "formulario": formulario,
+            "mensaje": mensaje,
+        },
+    )
 
 
 def cerrar_sesion(request):
@@ -91,18 +102,19 @@ def cerrar_sesion(request):
 
 
 def inicio(request):
-    usuario_id = request.session.get("usuario_id")
+    redireccion = Usuario.obtener_redireccion_acceso(request)
 
-    if not usuario_id:
-        return redirect("login")
+    if redireccion:
+        return redirect(redireccion)
 
-    usuario = Usuario.obtener_por_id(usuario_id)
+    usuario = Usuario.obtener_usuario_sesion(request)
     return redirect(usuario.obtener_inicio_por_rol())
 
 
 # ==========================
 # REGISTROS
 # ==========================
+
 
 def registro_empresa(request):
     if request.method == "POST":
@@ -116,12 +128,14 @@ def registro_empresa(request):
         formulario_usuario = UsuarioEmpresaForm()
         formulario_empresa = RegistroEmpresaForm()
 
-    informacion_template = {
-        "formulario_usuario": formulario_usuario,
-        "formulario_empresa": formulario_empresa
-    }
-
-    return render(request, "comercial/registro_empresa.html", informacion_template)
+    return render(
+        request,
+        "comercial/registro_empresa.html",
+        {
+            "formulario_usuario": formulario_usuario,
+            "formulario_empresa": formulario_empresa,
+        },
+    )
 
 
 def registro_tendero(request):
@@ -136,12 +150,14 @@ def registro_tendero(request):
         formulario_usuario = UsuarioTenderoForm()
         formulario_tienda = RegistroTiendaForm()
 
-    informacion_template = {
-        "formulario_usuario": formulario_usuario,
-        "formulario_tienda": formulario_tienda
-    }
-
-    return render(request, "comercial/registro_tendero.html", informacion_template)
+    return render(
+        request,
+        "comercial/registro_tendero.html",
+        {
+            "formulario_usuario": formulario_usuario,
+            "formulario_tienda": formulario_tienda,
+        },
+    )
 
 
 def registro_vendedor(request):
@@ -156,57 +172,48 @@ def registro_vendedor(request):
         formulario_usuario = UsuarioVendedorForm()
         formulario_vendedor = RegistroVendedorForm()
 
-    informacion_template = {
-        "formulario_usuario": formulario_usuario,
-        "formulario_vendedor": formulario_vendedor
-    }
-
-    return render(request, "comercial/registro_vendedor.html", informacion_template)
+    return render(
+        request,
+        "comercial/registro_vendedor.html",
+        {
+            "formulario_usuario": formulario_usuario,
+            "formulario_vendedor": formulario_vendedor,
+        },
+    )
 
 
 # ==========================
 # VISTAS DE EMPRESA
 # ==========================
 
+
 def inicio_empresa(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "EMPRESA")
 
-    if request.session.get("tipo_usuario") != "EMPRESA":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    empresa = Empresa.obtener_por_usuario_id(request.session.get("usuario_id"))
-    informacion_template = empresa.obtener_resumen_dashboard()
-
-    return render(request, "comercial/inicio_empresa.html", informacion_template)
+    empresa = Empresa.obtener_actual_desde_request(request)
+    return render(request, "comercial/inicio_empresa.html", empresa.obtener_resumen_dashboard())
 
 
 def productos_empresa(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "EMPRESA")
 
-    if request.session.get("tipo_usuario") != "EMPRESA":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    empresa = Empresa.obtener_por_usuario_id(request.session.get("usuario_id"))
-    productos = empresa.listar_productos()
-
-    informacion_template = {
-        "empresa": empresa,
-        "productos": productos
-    }
-
-    return render(request, "comercial/productos_empresa.html", informacion_template)
+    empresa = Empresa.obtener_actual_desde_request(request)
+    return render(request, "comercial/productos_empresa.html", empresa.obtener_contexto_productos())
 
 
 def crear_producto_empresa(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "EMPRESA")
 
-    if request.session.get("tipo_usuario") != "EMPRESA":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    empresa = Empresa.obtener_por_usuario_id(request.session.get("usuario_id"))
+    empresa = Empresa.obtener_actual_desde_request(request)
 
     if request.method == "POST":
         formulario = ProductoEmpresaForm(request.POST)
@@ -217,222 +224,358 @@ def crear_producto_empresa(request):
     else:
         formulario = ProductoEmpresaForm()
 
-    informacion_template = {
-        "formulario": formulario,
-        "titulo": "Registrar producto"
-    }
-
-    return render(request, "comercial/formulario.html", informacion_template)
+    return render(
+        request,
+        "comercial/formulario.html",
+        {
+            "formulario": formulario,
+            "titulo": "Registrar producto",
+        },
+    )
 
 
 def inventario_empresa(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "EMPRESA")
 
-    if request.session.get("tipo_usuario") != "EMPRESA":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    empresa = Empresa.obtener_por_usuario_id(request.session.get("usuario_id"))
-    inventarios = empresa.listar_inventarios()
-
-    informacion_template = {
-        "empresa": empresa,
-        "inventarios": inventarios
-    }
-
-    return render(request, "comercial/inventario_empresa.html", informacion_template)
+    empresa = Empresa.obtener_actual_desde_request(request)
+    return render(request, "comercial/inventario_empresa.html", empresa.obtener_contexto_inventarios())
 
 
 def crear_inventario_empresa(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "EMPRESA")
 
-    if request.session.get("tipo_usuario") != "EMPRESA":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    empresa = Empresa.obtener_por_usuario_id(request.session.get("usuario_id"))
+    empresa = Empresa.obtener_actual_desde_request(request)
+    mensaje = ""
 
     if request.method == "POST":
         formulario = InventarioEmpresaForm(request.POST)
         formulario = empresa.configurar_formulario_inventario(formulario)
 
         if formulario.is_valid():
-            formulario.save()
-            return redirect("inventario_empresa")
+            try:
+                empresa.crear_inventario(formulario)
+                return redirect("inventario_empresa")
+            except ValueError as error:
+                mensaje = str(error)
     else:
         formulario = InventarioEmpresaForm()
         formulario = empresa.configurar_formulario_inventario(formulario)
 
-    informacion_template = {
-        "formulario": formulario,
-        "titulo": "Registrar inventario"
-    }
-
-    return render(request, "comercial/formulario.html", informacion_template)
+    return render(
+        request,
+        "comercial/formulario.html",
+        {
+            "formulario": formulario,
+            "titulo": "Registrar inventario",
+            "mensaje": mensaje,
+        },
+    )
 
 
 def tiendas_empresa(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "EMPRESA")
 
-    if request.session.get("tipo_usuario") != "EMPRESA":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    empresa = Empresa.obtener_por_usuario_id(request.session.get("usuario_id"))
-    tiendas = empresa.listar_tiendas()
-
-    informacion_template = {
-        "empresa": empresa,
-        "tiendas": tiendas
-    }
-
-    return render(request, "comercial/tiendas_empresa.html", informacion_template)
+    empresa = Empresa.obtener_actual_desde_request(request)
+    return render(request, "comercial/tiendas_empresa.html", empresa.obtener_contexto_tiendas())
 
 
 def pedidos_empresa(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "EMPRESA")
 
-    if request.session.get("tipo_usuario") != "EMPRESA":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    empresa = Empresa.obtener_por_usuario_id(request.session.get("usuario_id"))
-    pedidos = empresa.listar_pedidos_recibidos()
+    empresa = Empresa.obtener_actual_desde_request(request)
+    return render(request, "comercial/pedidos_empresa.html", empresa.obtener_contexto_pedidos_recibidos())
 
-    informacion_template = {
-        "empresa": empresa,
-        "pedidos": pedidos
-    }
 
-    return render(request, "comercial/pedidos_empresa.html", informacion_template)
+def confirmar_pedido_empresa(request, pedido_id):
+    redireccion = Usuario.obtener_redireccion_acceso(request, "EMPRESA")
+
+    if redireccion:
+        return redirect(redireccion)
+
+    if request.method == "POST":
+        empresa = Empresa.obtener_actual_desde_request(request)
+        empresa.ejecutar_accion_pedido_recibido(pedido_id, "CONFIRMAR")
+
+    return redirect("pedidos_empresa")
+
+
+def preparar_pedido_empresa(request, pedido_id):
+    redireccion = Usuario.obtener_redireccion_acceso(request, "EMPRESA")
+
+    if redireccion:
+        return redirect(redireccion)
+
+    if request.method == "POST":
+        empresa = Empresa.obtener_actual_desde_request(request)
+        empresa.ejecutar_accion_pedido_recibido(pedido_id, "PREPARAR")
+
+    return redirect("pedidos_empresa")
+
+
+def entregar_pedido_empresa(request, pedido_id):
+    redireccion = Usuario.obtener_redireccion_acceso(request, "EMPRESA")
+
+    if redireccion:
+        return redirect(redireccion)
+
+    if request.method == "POST":
+        empresa = Empresa.obtener_actual_desde_request(request)
+        empresa.ejecutar_accion_pedido_recibido(pedido_id, "ENTREGAR")
+
+    return redirect("pedidos_empresa")
 
 
 # ==========================
 # VISTAS DE TENDERO
 # ==========================
 
+
 def inicio_tendero(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
 
-    if request.session.get("tipo_usuario") != "TENDERO":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
-    informacion_template = tienda.obtener_resumen_dashboard()
-
-    return render(request, "comercial/inicio_tendero.html", informacion_template)
+    tienda = Tienda.obtener_actual_desde_request(request)
+    return render(request, "comercial/inicio_tendero.html", tienda.obtener_resumen_dashboard())
 
 
 def productos_tendero(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
 
-    if request.session.get("tipo_usuario") != "TENDERO":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
-    productos_tienda = tienda.listar_productos_tienda()
-
-    informacion_template = {
-        "tienda": tienda,
-        "productos_tienda": productos_tienda
-    }
-
-    return render(request, "comercial/productos_tendero.html", informacion_template)
+    tienda = Tienda.obtener_actual_desde_request(request)
+    return render(request, "comercial/productos_tendero.html", tienda.obtener_contexto_productos_tienda())
 
 
 def crear_producto_tendero(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
 
-    if request.session.get("tipo_usuario") != "TENDERO":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+    return redirect("crear_pedido_empresa_tendero")
+
+
+def catalogo_empresas_tendero(request):
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
+
+    if redireccion:
+        return redirect(redireccion)
+
+    tienda = Tienda.obtener_actual_desde_request(request)
+    return render(request, "comercial/catalogo_empresas_tendero.html", tienda.obtener_contexto_catalogo_empresas())
+
+
+def pedidos_empresa_tendero(request):
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
+
+    if redireccion:
+        return redirect(redireccion)
+
+    tienda = Tienda.obtener_actual_desde_request(request)
+    return render(request, "comercial/pedidos_empresa_tendero.html", tienda.obtener_contexto_pedidos_empresa())
+
+
+def crear_pedido_empresa_tendero(request):
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
+
+    if redireccion:
+        return redirect(redireccion)
+
+    tienda = Tienda.obtener_actual_desde_request(request)
+
+    if request.method == "POST":
+        formulario = PedidoEmpresaTenderoForm(request.POST)
+        formulario = tienda.configurar_formulario_pedido_empresa(formulario)
+
+        if formulario.is_valid():
+            tienda.crear_pedido_empresa(formulario)
+            return redirect("pedidos_empresa_tendero")
+    else:
+        formulario = PedidoEmpresaTenderoForm()
+        formulario = tienda.configurar_formulario_pedido_empresa(formulario)
+
+    return render(
+        request,
+        "comercial/formulario.html",
+        {
+            "formulario": formulario,
+            "titulo": "Crear pedido a una empresa",
+            "ayuda": "Selecciona primero la empresa proveedora. Después agrega sus productos a la orden.",
+        },
+    )
+
+
+def crear_detalle_empresa_tendero(request):
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
+
+    if redireccion:
+        return redirect(redireccion)
+
+    tienda = Tienda.obtener_actual_desde_request(request)
     mensaje = ""
 
     if request.method == "POST":
-        formulario = ProductoTiendaForm(request.POST)
-        formulario = tienda.configurar_formulario_producto_tienda(formulario)
+        formulario = DetallePedidoEmpresaTenderoForm(request.POST)
+        formulario = tienda.configurar_formulario_detalle_empresa(formulario)
 
         if formulario.is_valid():
             try:
-                tienda.crear_producto_tienda(formulario)
-                return redirect("productos_tendero")
+                tienda.agregar_detalle_empresa(formulario)
+                return redirect("pedidos_empresa_tendero")
             except ValueError as error:
                 mensaje = str(error)
     else:
-        formulario = ProductoTiendaForm()
-        formulario = tienda.configurar_formulario_producto_tienda(formulario)
+        formulario = DetallePedidoEmpresaTenderoForm()
+        formulario = tienda.configurar_formulario_detalle_empresa(formulario)
 
-    informacion_template = {
-        "formulario": formulario,
-        "titulo": "Agregar producto a la tienda",
-        "mensaje": mensaje
-    }
+    return render(
+        request,
+        "comercial/formulario.html",
+        {
+            "formulario": formulario,
+            "titulo": "Agregar producto al pedido de empresa",
+            "mensaje": mensaje,
+            "ayuda": "El producto debe pertenecer a la empresa seleccionada. La cantidad quedará reservada en su inventario.",
+        },
+    )
 
-    return render(request, "comercial/formulario.html", informacion_template)
+
+def pagos_empresa_tendero(request):
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
+
+    if redireccion:
+        return redirect(redireccion)
+
+    tienda = Tienda.obtener_actual_desde_request(request)
+    return render(request, "comercial/pagos_empresa_tendero.html", tienda.obtener_contexto_pagos_empresa())
+
+
+def crear_pago_empresa_tendero(request):
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
+
+    if redireccion:
+        return redirect(redireccion)
+
+    tienda = Tienda.obtener_actual_desde_request(request)
+    mensaje = ""
+
+    if request.method == "POST":
+        formulario = PagoPedidoEmpresaTenderoForm(request.POST)
+        formulario = tienda.configurar_formulario_pago_empresa(formulario)
+
+        if formulario.is_valid():
+            try:
+                tienda.registrar_pago_empresa(formulario)
+                return redirect("pagos_empresa_tendero")
+            except ValueError as error:
+                mensaje = str(error)
+    else:
+        formulario = PagoPedidoEmpresaTenderoForm()
+        formulario = tienda.configurar_formulario_pago_empresa(formulario)
+
+    return render(
+        request,
+        "comercial/formulario.html",
+        {
+            "formulario": formulario,
+            "titulo": "Pagar pedido a empresa",
+            "mensaje": mensaje,
+            "ayuda": "Al pagar, la orden se cierra y el stock reservado se descuenta del inventario de la empresa.",
+        },
+    )
+
+
+def cancelar_pedido_empresa_tendero(request, pedido_id):
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
+
+    if redireccion:
+        return redirect(redireccion)
+
+    if request.method == "POST":
+        tienda = Tienda.obtener_actual_desde_request(request)
+        tienda.cancelar_pedido_empresa(pedido_id)
+
+    return redirect("pedidos_empresa_tendero")
+
+
+def detalle_pedido_empresa_tendero(request, pedido_id):
+    redireccion = Usuario.obtener_redireccion_acceso(request)
+
+    if redireccion:
+        return redirect(redireccion)
+
+    contexto = PedidoEmpresa.obtener_contexto_detalle_por_usuario(
+        request.session.get("usuario_id"),
+        request.session.get("tipo_usuario"),
+        pedido_id,
+    )
+
+    if contexto is None:
+        return redirect("inicio")
+
+    return render(request, "comercial/detalle_pedido_empresa.html", contexto)
 
 
 def pedidos_tendero(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
 
-    if request.session.get("tipo_usuario") != "TENDERO":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
-    pedidos = tienda.listar_pedidos_recibidos()
-
-    informacion_template = {
-        "tienda": tienda,
-        "pedidos": pedidos
-    }
-
-    return render(request, "comercial/pedidos_tendero.html", informacion_template)
+    tienda = Tienda.obtener_actual_desde_request(request)
+    return render(request, "comercial/pedidos_tendero.html", tienda.obtener_contexto_pedidos_recibidos())
 
 
 def confirmar_pedido_tendero(request, pedido_id):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
 
-    if request.session.get("tipo_usuario") != "TENDERO":
-        return redirect("inicio")
-
-    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+    if redireccion:
+        return redirect(redireccion)
 
     if request.method == "POST":
+        tienda = Tienda.obtener_actual_desde_request(request)
         tienda.confirmar_pedido(pedido_id)
 
     return redirect("pedidos_tendero")
 
 
 def preparar_pedido_tendero(request, pedido_id):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
 
-    if request.session.get("tipo_usuario") != "TENDERO":
-        return redirect("inicio")
-
-    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+    if redireccion:
+        return redirect(redireccion)
 
     if request.method == "POST":
+        tienda = Tienda.obtener_actual_desde_request(request)
         tienda.pasar_pedido_a_preparacion(pedido_id)
 
     return redirect("pedidos_tendero")
 
 
 def entregar_pedido_tendero(request, pedido_id):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "TENDERO")
 
-    if request.session.get("tipo_usuario") != "TENDERO":
-        return redirect("inicio")
-
-    tienda = Tienda.obtener_por_usuario_id(request.session.get("usuario_id"))
+    if redireccion:
+        return redirect(redireccion)
 
     if request.method == "POST":
+        tienda = Tienda.obtener_actual_desde_request(request)
         tienda.entregar_pedido(pedido_id)
 
     return redirect("pedidos_tendero")
@@ -442,62 +585,62 @@ def entregar_pedido_tendero(request, pedido_id):
 # VISTAS DE VENDEDOR / DELIVERY
 # ==========================
 
+
 def inicio_vendedor(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "VENDEDOR")
 
-    if request.session.get("tipo_usuario") != "VENDEDOR":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    vendedor = Vendedor.obtener_por_usuario_id(request.session.get("usuario_id"))
-    informacion_template = vendedor.obtener_resumen_dashboard()
-
-    return render(request, "comercial/inicio_vendedor.html", informacion_template)
+    vendedor = Vendedor.obtener_actual_desde_request(request)
+    return render(request, "comercial/inicio_vendedor.html", vendedor.obtener_resumen_dashboard())
 
 
 def catalogo_vendedor(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "VENDEDOR")
 
-    if request.session.get("tipo_usuario") != "VENDEDOR":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    vendedor = Vendedor.obtener_por_usuario_id(request.session.get("usuario_id"))
-    productos_tienda = vendedor.listar_catalogo()
-
-    informacion_template = {
-        "productos_tienda": productos_tienda
-    }
-
-    return render(request, "comercial/catalogo_vendedor.html", informacion_template)
+    vendedor = Vendedor.obtener_actual_desde_request(request)
+    return render(request, "comercial/catalogo_vendedor.html", vendedor.obtener_contexto_catalogo())
 
 
 def pedidos_vendedor(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "VENDEDOR")
 
-    if request.session.get("tipo_usuario") != "VENDEDOR":
+    if redireccion:
+        return redirect(redireccion)
+
+    vendedor = Vendedor.obtener_actual_desde_request(request)
+    return render(request, "comercial/pedidos_vendedor.html", vendedor.obtener_contexto_pedidos())
+
+
+def detalle_pedido(request, pedido_id):
+    redireccion = Usuario.obtener_redireccion_acceso(request)
+
+    if redireccion:
+        return redirect(redireccion)
+
+    contexto = Pedido.obtener_contexto_detalle_por_usuario(
+        request.session.get("usuario_id"),
+        request.session.get("tipo_usuario"),
+        pedido_id,
+    )
+
+    if contexto is None:
         return redirect("inicio")
 
-    vendedor = Vendedor.obtener_por_usuario_id(request.session.get("usuario_id"))
-    pedidos = vendedor.listar_pedidos()
-
-    informacion_template = {
-        "vendedor": vendedor,
-        "pedidos": pedidos
-    }
-
-    return render(request, "comercial/pedidos_vendedor.html", informacion_template)
+    return render(request, "comercial/detalle_pedido.html", contexto)
 
 
 def crear_pedido_vendedor(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "VENDEDOR")
 
-    if request.session.get("tipo_usuario") != "VENDEDOR":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    vendedor = Vendedor.obtener_por_usuario_id(request.session.get("usuario_id"))
+    vendedor = Vendedor.obtener_actual_desde_request(request)
 
     if request.method == "POST":
         formulario = PedidoVendedorForm(request.POST)
@@ -508,23 +651,25 @@ def crear_pedido_vendedor(request):
     else:
         formulario = PedidoVendedorForm()
 
-    informacion_template = {
-        "formulario": formulario,
-        "titulo": "Crear pedido a una tienda"
-    }
-
-    return render(request, "comercial/formulario.html", informacion_template)
+    return render(
+        request,
+        "comercial/formulario.html",
+        {
+            "formulario": formulario,
+            "titulo": "Crear pedido a una tienda",
+        },
+    )
 
 
 def crear_detalle_vendedor(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "VENDEDOR")
 
-    if request.session.get("tipo_usuario") != "VENDEDOR":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    vendedor = Vendedor.obtener_por_usuario_id(request.session.get("usuario_id"))
+    vendedor = Vendedor.obtener_actual_desde_request(request)
     mensaje = ""
+    ayuda = "Solo aparecen pedidos abiertos. Si la compra anterior ya fue pagada, primero crea un pedido nuevo."
 
     if request.method == "POST":
         formulario = DetallePedidoVendedorForm(request.POST)
@@ -540,55 +685,48 @@ def crear_detalle_vendedor(request):
         formulario = DetallePedidoVendedorForm()
         formulario = vendedor.configurar_formulario_detalle(formulario)
 
-    informacion_template = {
-        "formulario": formulario,
-        "titulo": "Agregar producto de tienda al pedido",
-        "mensaje": mensaje
-    }
-
-    return render(request, "comercial/formulario.html", informacion_template)
+    return render(
+        request,
+        "comercial/formulario.html",
+        {
+            "formulario": formulario,
+            "titulo": "Agregar producto de tienda al pedido",
+            "mensaje": mensaje,
+            "ayuda": ayuda,
+        },
+    )
 
 
 def cancelar_pedido_vendedor(request, pedido_id):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "VENDEDOR")
 
-    if request.session.get("tipo_usuario") != "VENDEDOR":
-        return redirect("inicio")
-
-    vendedor = Vendedor.obtener_por_usuario_id(request.session.get("usuario_id"))
+    if redireccion:
+        return redirect(redireccion)
 
     if request.method == "POST":
+        vendedor = Vendedor.obtener_actual_desde_request(request)
         vendedor.cancelar_pedido(pedido_id)
 
     return redirect("pedidos_vendedor")
 
 
 def pagos_vendedor(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "VENDEDOR")
 
-    if request.session.get("tipo_usuario") != "VENDEDOR":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    vendedor = Vendedor.obtener_por_usuario_id(request.session.get("usuario_id"))
-    pagos = vendedor.listar_pagos()
-
-    informacion_template = {
-        "pagos": pagos
-    }
-
-    return render(request, "comercial/pagos_vendedor.html", informacion_template)
+    vendedor = Vendedor.obtener_actual_desde_request(request)
+    return render(request, "comercial/pagos_vendedor.html", vendedor.obtener_contexto_pagos())
 
 
 def crear_pago_vendedor(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "VENDEDOR")
 
-    if request.session.get("tipo_usuario") != "VENDEDOR":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    vendedor = Vendedor.obtener_por_usuario_id(request.session.get("usuario_id"))
+    vendedor = Vendedor.obtener_actual_desde_request(request)
     mensaje = ""
 
     if request.method == "POST":
@@ -605,61 +743,41 @@ def crear_pago_vendedor(request):
         formulario = PagoVendedorForm()
         formulario = vendedor.configurar_formulario_pago(formulario)
 
-    informacion_template = {
-        "formulario": formulario,
-        "titulo": "Registrar pago",
-        "mensaje": mensaje
-    }
-
-    return render(request, "comercial/formulario.html", informacion_template)
+    return render(
+        request,
+        "comercial/formulario.html",
+        {
+            "formulario": formulario,
+            "titulo": "Pagar pedido",
+            "mensaje": mensaje,
+            "ayuda": "El monto debe coincidir con el total. Al guardar, la orden quedará pagada y cerrada para nuevos productos.",
+        },
+    )
 
 
 def tutoriales_vendedor(request):
-    if not request.session.get("usuario_id"):
-        return redirect("login")
+    redireccion = Usuario.obtener_redireccion_acceso(request, "VENDEDOR")
 
-    if request.session.get("tipo_usuario") != "VENDEDOR":
-        return redirect("inicio")
+    if redireccion:
+        return redirect(redireccion)
 
-    tutoriales = Tutorial.objects.all()
-
-    informacion_template = {
-        "tutoriales": tutoriales
-    }
-
-    return render(request, "comercial/tutoriales_vendedor.html", informacion_template)
+    vendedor = Vendedor.obtener_actual_desde_request(request)
+    return render(request, "comercial/tutoriales_vendedor.html", vendedor.obtener_contexto_tutoriales())
 
 
 # ==========================
 # RESUMEN JSON
 # ==========================
 
-def resumen(request):
-    datos = {
-        "usuarios": Usuario.objects.count(),
-        "empresas": Empresa.objects.count(),
-        "tenderos": Tienda.objects.count(),
-        "vendedores": Vendedor.objects.count(),
-        "productos_empresa": Producto.objects.count(),
-        "inventarios_empresa": Inventario.objects.count(),
-        "productos_tienda": ProductoTienda.objects.count(),
-        "pedidos": Pedido.objects.count(),
-        "detalles_pedido": DetallePedido.objects.count(),
-        "pagos": Pago.objects.count(),
-        "facturas": Factura.objects.count(),
-        "comisiones": Comision.objects.count(),
-        "suscripciones": Suscripcion.objects.count(),
-        "calificaciones": Calificacion.objects.count(),
-        "notificaciones": Notificacion.objects.count(),
-        "tutoriales": Tutorial.objects.count(),
-    }
 
-    return JsonResponse(datos)
+def resumen(request):
+    return JsonResponse(Usuario.obtener_resumen_sistema())
 
 
 # ==========================
 # API PARA FLASK
 # ==========================
+
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
@@ -709,6 +827,21 @@ class DetallePedidoViewSet(viewsets.ModelViewSet):
 class PagoViewSet(viewsets.ModelViewSet):
     queryset = Pago.objects.all()
     serializer_class = PagoSerializer
+
+
+class PedidoEmpresaViewSet(viewsets.ModelViewSet):
+    queryset = PedidoEmpresa.objects.all()
+    serializer_class = PedidoEmpresaSerializer
+
+
+class DetallePedidoEmpresaViewSet(viewsets.ModelViewSet):
+    queryset = DetallePedidoEmpresa.objects.all()
+    serializer_class = DetallePedidoEmpresaSerializer
+
+
+class PagoPedidoEmpresaViewSet(viewsets.ModelViewSet):
+    queryset = PagoPedidoEmpresa.objects.all()
+    serializer_class = PagoPedidoEmpresaSerializer
 
 
 class FacturaViewSet(viewsets.ModelViewSet):
